@@ -53,10 +53,10 @@ export function ProductSizeSelector({
   const whatsappHref = whatsappNumber ? buildWhatsappUrl(whatsappNumber, message) : null;
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
       {hasSizes ? (
-        <div className="space-y-2">
-          <h2 className="text-sm font-semibold">Tamanhos</h2>
+        <div className="space-y-2.5">
+          <h2 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Tamanhos</h2>
           <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Escolha o tamanho">
             {sizes.map((size) => {
               const available = size.active && size.quantity !== 0;
@@ -72,11 +72,11 @@ export function ProductSizeSelector({
                     setSelectedSize((current) => (current === size.size ? null : size.size))
                   }
                   className={cn(
-                    "rounded-md border px-3 py-1.5 text-sm transition-colors",
+                    "h-11 min-w-[2.75rem] rounded-xl border-2 px-3 text-sm font-semibold transition-all duration-150",
                     !available &&
-                      "border-border text-muted-foreground cursor-not-allowed line-through opacity-60",
-                    available && selected && "border-primary bg-primary text-primary-foreground",
-                    available && !selected && "border-border hover:bg-accent",
+                      "border-border/50 text-muted-foreground cursor-not-allowed line-through opacity-50",
+                    available && selected && "border-accent bg-accent text-accent-foreground shadow-md shadow-accent/20",
+                    available && !selected && "border-border/60 hover:border-accent/40 hover:bg-muted/50",
                   )}
                 >
                   {size.size}
@@ -95,7 +95,7 @@ export function ProductSizeSelector({
           type="button"
           variant={alreadyAdded ? "secondary" : "outline"}
           disabled={!canAdd}
-          className="flex-1"
+          className="h-12 flex-1 rounded-xl font-semibold"
           onClick={() => {
             if (alreadyAdded) {
               removeItem(productId, selectedSize);
@@ -112,7 +112,10 @@ export function ProductSizeSelector({
             href={whatsappHref}
             target="_blank"
             rel="noopener noreferrer"
-            className={cn(buttonVariants({ variant: "default" }), "flex-1")}
+            className={cn(
+              buttonVariants({ variant: "default" }),
+              "h-12 flex-1 rounded-xl bg-[#25d366] font-semibold text-white shadow-lg shadow-[#25d366]/25 hover:bg-[#20ba5c]",
+            )}
           >
             <MessageCircle aria-hidden="true" />
             {priceDisplayMode === "consult" ? "Consultar pelo WhatsApp" : "Falar no WhatsApp"}

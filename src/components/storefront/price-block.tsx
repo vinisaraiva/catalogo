@@ -18,12 +18,12 @@ export function PriceBlock({
   if (display.mode === "hidden") return null;
 
   if (display.mode === "consult") {
-    return <p className={cn("text-sm font-medium", className)}>{display.label}</p>;
+    return <p className={cn("text-sm font-semibold text-accent", className)}>{display.label}</p>;
   }
 
   return (
     <p className={cn("flex items-baseline gap-2", className)}>
-      <span className="font-semibold">{display.label}</span>
+      <span className="font-bold text-accent">{display.label}</span>
       {display.originalLabel ? (
         <span className="text-muted-foreground text-sm line-through">{display.originalLabel}</span>
       ) : null}

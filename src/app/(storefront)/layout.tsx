@@ -41,17 +41,22 @@ export default async function StorefrontLayout({ children }: { children: React.R
   return (
     <SelectionProvider>
       <div className="min-h-svh">
-        <header className="border-border bg-background sticky top-0 z-10 space-y-3 border-b px-4 py-3">
-          <Link href="/" className="flex items-center gap-2">
-            {store.logo_url ? (
-              // eslint-disable-next-line @next/next/no-img-element -- arbitrary admin-entered URL, not a known image host
-              <img src={store.logo_url} alt="" className="h-8 w-8 object-contain" />
-            ) : null}
-            <span className="font-semibold">{store.name}</span>
-          </Link>
-          <SearchBar />
+        <header className="sticky top-0 z-10 border-b border-border/50 bg-background/80 backdrop-blur-xl">
+          <div className="mx-auto flex max-w-lg flex-col gap-3 px-4 py-3">
+            <Link href="/" className="flex items-center gap-3">
+              {store.logo_url ? (
+                // eslint-disable-next-line @next/next/no-img-element -- arbitrary admin-entered URL, not a known image host
+                <img src={store.logo_url} alt="" className="h-10 w-10 rounded-lg object-contain shadow-sm" />
+              ) : null}
+              <div className="flex flex-col">
+                <span className="text-base font-bold tracking-tight">{store.name}</span>
+                <span className="text-muted-foreground text-[10px] font-medium uppercase tracking-widest">Catálogo Esportivo</span>
+              </div>
+            </Link>
+            <SearchBar />
+          </div>
         </header>
-        <main className="p-4 pb-24">{children}</main>
+        <main className="mx-auto max-w-lg px-4 pb-24 pt-4">{children}</main>
         <SelectionBar whatsappNumber={store.whatsapp_number} />
       </div>
     </SelectionProvider>

@@ -5,6 +5,7 @@ import { listPublicProducts } from "@/lib/queries/public-products";
 import { TeamCard } from "@/components/storefront/team-card";
 import { ProductCard } from "@/components/storefront/product-card";
 import { WhatsappCta } from "@/components/storefront/whatsapp-cta";
+import { Shirt } from "lucide-react";
 
 /**
  * PRD §17 "Catálogo público" / Home. "Retrô" is treated as the collection
@@ -32,11 +33,36 @@ export default async function StorefrontHomePage() {
     ? await listPublicProducts(store.id, { collectionId: retroCollection.id, limit: 8 })
     : [];
 
+  const hasContent =
+    featuredTeams.length > 0 ||
+    promoProducts.length > 0 ||
+    newArrivals.length > 0 ||
+    featuredProducts.length > 0 ||
+    nationalTeams.length > 0 ||
+    retroProducts.length > 0;
+
   return (
-    <div className="space-y-8">
+    <div className="space-y-10">
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#0f172a] via-[#1e293b] to-accent/80 p-6 text-white animate-fade-in">
+        <div className="relative z-10 space-y-3">
+          <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-widest text-white/60">
+            <Shirt className="size-4" aria-hidden="true" />
+            <span>{store.name}</span>
+          </div>
+          <h1 className="text-2xl font-bold leading-tight tracking-tight">
+            Confira nosso<br />catálogo esportivo
+          </h1>
+          <p className="text-sm text-white/70">
+            Camisas de times, seleções e muito mais.
+          </p>
+        </div>
+        <div className="absolute -top-12 -right-12 size-40 rounded-full bg-accent/20 blur-3xl" aria-hidden="true" />
+        <div className="absolute -bottom-8 -left-8 size-32 rounded-full bg-accent/10 blur-2xl" aria-hidden="true" />
+      </div>
+
       {featuredTeams.length > 0 ? (
-        <Section title="Times populares">
-          <div className="flex gap-3 overflow-x-auto">
+        <Section title="Times populares" icon="star">
+          <div className="-mx-4 flex gap-3 overflow-x-auto px-4 pb-2 scrollbar-none">
             {featuredTeams.map((team) => (
               <TeamCard key={team.id} team={team} />
             ))}
@@ -45,26 +71,26 @@ export default async function StorefrontHomePage() {
       ) : null}
 
       {promoProducts.length > 0 ? (
-        <Section title="Promoções">
+        <Section title="Promoções" icon="fire">
           <ProductGrid products={promoProducts} />
         </Section>
       ) : null}
 
       {newArrivals.length > 0 ? (
-        <Section title="Novidades">
+        <Section title="Novidades" icon="sparkles">
           <ProductGrid products={newArrivals} />
         </Section>
       ) : null}
 
       {featuredProducts.length > 0 ? (
-        <Section title="Destaques">
+        <Section title="Destaques" icon="star">
           <ProductGrid products={featuredProducts} />
         </Section>
       ) : null}
 
       {nationalTeams.length > 0 ? (
-        <Section title="Seleções">
-          <div className="flex gap-3 overflow-x-auto">
+        <Section title="Seleções" icon="trophy">
+          <div className="-mx-4 flex gap-3 overflow-x-auto px-4 pb-2 scrollbar-none">
             {nationalTeams.map((team) => (
               <TeamCard key={team.id} team={team} />
             ))}
@@ -73,30 +99,27 @@ export default async function StorefrontHomePage() {
       ) : null}
 
       {retroProducts.length > 0 ? (
-        <Section title="Retrô">
+        <Section title="Retrô" icon="clock">
           <ProductGrid products={retroProducts} />
         </Section>
       ) : null}
 
-      {featuredTeams.length === 0 &&
-      promoProducts.length === 0 &&
-      newArrivals.length === 0 &&
-      featuredProducts.length === 0 &&
-      nationalTeams.length === 0 &&
-      retroProducts.length === 0 ? (
-        <p className="text-muted-foreground text-center text-sm">
-          Catálogo em preparação — volte em breve.
-        </p>
+      {!hasContent ? (
+        <div className="flex flex-col items-center justify-center py-16 text-center">
+          <div className="bg-muted mb-4 flex size-16 items-center justify-center rounded-full">
+            <Shirt className="text-muted-foreground size-8" />
+          </div>
+          <p className="text-muted-foreground text-sm">
+            Catálogo em preparação — volte em breve.
+          </p>
+        </div>
       ) : null}
 
       {store.whatsapp_number ? (
-        // bottom-20, not bottom-4: leaves room for the fixed SelectionBar
-        // (Phase 4, z-20) so the two never overlap when a selection is
-        // active — see DECISIONS.md ADR-026.
         <WhatsappCta
           phoneNumber={store.whatsapp_number}
           message={`Olá! Vi o catálogo da ${store.name} e gostaria de saber mais.`}
-          className="fixed right-4 bottom-20 z-10 shadow-lg"
+          className="fixed right-4 bottom-20 z-10 shadow-lg animate-pulse-slow"
         >
           Fale conosco
         </WhatsappCta>
@@ -105,10 +128,31 @@ export default async function StorefrontHomePage() {
   );
 }
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function Section({
+  title,
+  icon,
+  children,
+}: {
+  title: string;
+  icon?: "star" | "fire" | "sparkles" | "trophy" | "clock";
+  children: React.ReactNode;
+}) {
   return (
     <section className="space-y-3">
-      <h2 className="text-base font-semibold">{title}</h2>
+      <div className="flex items-center gap-2.5">
+        {icon === "star" ? (
+          <span className="text-accent text-sm" aria-hidden="true">★</span>
+        ) : icon === "fire" ? (
+          <span className="text-sm" aria-hidden="true">🔥</span>
+        ) : icon === "sparkles" ? (
+          <span className="text-sm" aria-hidden="true">✨</span>
+        ) : icon === "trophy" ? (
+          <span className="text-sm" aria-hidden="true">🏆</span>
+        ) : icon === "clock" ? (
+          <span className="text-sm" aria-hidden="true">🕐</span>
+        ) : null}
+        <h2 className="text-base font-bold tracking-tight">{title}</h2>
+      </div>
       {children}
     </section>
   );
@@ -116,7 +160,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 
 function ProductGrid({ products }: { products: Awaited<ReturnType<typeof listPublicProducts>> }) {
   return (
-    <div className="grid grid-cols-2 gap-3">
+    <div className="grid grid-cols-2 gap-3 sm:gap-4">
       {products.map((product) => (
         <ProductCard key={product.id} product={product} />
       ))}

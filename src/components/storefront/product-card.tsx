@@ -18,35 +18,37 @@ export function ProductCard({ product }: { product: PublicProductRow }) {
   const cover = product.product_images[0] ?? null;
 
   return (
-    <Link href={`/produto/${product.slug}`} className="block h-full">
-      <Card className="h-full overflow-hidden">
-        <div className="bg-muted relative aspect-square" aria-hidden="true">
+    <Link href={`/produto/${product.slug}`} className="group block h-full">
+      <Card className="h-full overflow-hidden rounded-xl border-border/60 transition-all duration-200 group-hover:shadow-lg group-hover:shadow-black/5 group-hover:-translate-y-0.5">
+        <div className="bg-muted relative aspect-square overflow-hidden" aria-hidden="true">
           {cover ? (
             <Image
               src={cover.url}
               alt=""
               fill
               sizes="(min-width: 640px) 200px, 50vw"
-              className="object-cover"
+              className="object-cover transition-transform duration-300 group-hover:scale-105"
             />
           ) : (
             <div className="flex h-full items-center justify-center">
               <span className="text-muted-foreground text-xs">Sem foto</span>
             </div>
           )}
+          {product.status === "sold_out" ? (
+            <div className="absolute top-2 right-2 z-10">
+              <Badge variant="warning" className="shadow-sm">Esgotado</Badge>
+            </div>
+          ) : null}
         </div>
-        <CardContent className="space-y-1 p-3">
-          <p className="truncate text-sm font-medium">{product.name}</p>
+        <CardContent className="space-y-1.5 p-3">
+          <p className="truncate text-sm font-semibold leading-snug">{product.name}</p>
           <p className="text-muted-foreground truncate text-xs">{product.teams?.name ?? ""}</p>
-          <div className="flex items-center justify-between gap-2">
-            <PriceBlock
-              price={product.price}
-              promotionalPrice={product.promotional_price}
-              priceDisplayMode={product.price_display_mode}
-              className="text-sm"
-            />
-            {product.status === "sold_out" ? <Badge variant="warning">Esgotado</Badge> : null}
-          </div>
+          <PriceBlock
+            price={product.price}
+            promotionalPrice={product.promotional_price}
+            priceDisplayMode={product.price_display_mode}
+            className="text-sm"
+          />
         </CardContent>
       </Card>
     </Link>

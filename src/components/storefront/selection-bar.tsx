@@ -26,7 +26,7 @@ export function SelectionBar({ whatsappNumber }: { whatsappNumber: string | null
     : null;
 
   return (
-    <div className="border-border bg-background fixed inset-x-0 bottom-0 z-20 border-t shadow-lg">
+    <div className="border-border/50 fixed inset-x-0 bottom-0 z-20 border-t bg-gradient-to-b from-background to-background/95 shadow-[0_-4px_20px_rgba(0,0,0,0.08)] backdrop-blur-lg">
       {expanded ? (
         <ul className="max-h-60 space-y-2 overflow-y-auto px-4 py-3">
           {items.map((item) => (
@@ -42,7 +42,7 @@ export function SelectionBar({ whatsappNumber }: { whatsappNumber: string | null
                 type="button"
                 onClick={() => removeItem(item.productId, item.size)}
                 aria-label={`Remover ${item.productName} da seleção`}
-                className="text-muted-foreground shrink-0"
+                className="text-muted-foreground hover:text-destructive shrink-0 transition-colors"
               >
                 <X className="size-4" aria-hidden="true" />
               </button>
@@ -51,12 +51,12 @@ export function SelectionBar({ whatsappNumber }: { whatsappNumber: string | null
         </ul>
       ) : null}
 
-      <div className="flex items-center gap-2 px-4 py-3">
+      <div className="flex items-center gap-3 px-4 py-3">
         <button
           type="button"
           onClick={() => setExpanded((value) => !value)}
           aria-expanded={expanded}
-          className="flex-1 truncate text-left text-sm font-medium underline-offset-2 hover:underline"
+          className="flex-1 truncate text-left text-sm font-semibold underline-offset-2 hover:underline"
         >
           {label}
         </button>
@@ -70,7 +70,10 @@ export function SelectionBar({ whatsappNumber }: { whatsappNumber: string | null
             href={href}
             target="_blank"
             rel="noopener noreferrer"
-            className={cn(buttonVariants({ size: "sm" }), "shrink-0")}
+            className={cn(
+              buttonVariants({ size: "sm" }),
+              "shrink-0 bg-[#25d366] hover:bg-[#20ba5c] text-white shadow-md shadow-[#25d366]/20",
+            )}
           >
             <MessageCircle aria-hidden="true" /> Finalizar
           </a>

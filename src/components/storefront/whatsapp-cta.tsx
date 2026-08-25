@@ -32,7 +32,11 @@ export function WhatsappCta({
       href={href}
       target="_blank"
       rel="noopener noreferrer"
-      className={cn(buttonVariants({ size }), className)}
+      className={cn(
+        "bg-[#25d366] hover:bg-[#20ba5c] text-white shadow-lg shadow-[#25d366]/25 transition-all duration-200",
+        buttonVariants({ size }),
+        className,
+      )}
     >
       <MessageCircle /> {children}
     </a>

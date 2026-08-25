@@ -40,8 +40,8 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
   return (
     <div className="space-y-6">
       {coverImage ? (
-        <div className="space-y-2">
-          <div className="bg-muted relative aspect-square overflow-hidden rounded-lg">
+        <div className="space-y-3">
+          <div className="bg-muted relative aspect-square overflow-hidden rounded-2xl">
             <Image
               src={coverImage.url}
               alt={product.name}
@@ -52,13 +52,13 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
             />
           </div>
           {product.product_images.length > 1 ? (
-            <div className="flex gap-2 overflow-x-auto">
+            <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1">
               {product.product_images.map((image) => (
                 <div
                   key={image.url}
-                  className="bg-muted relative h-16 w-16 shrink-0 overflow-hidden rounded-md"
+                  className="bg-muted relative h-20 w-20 shrink-0 overflow-hidden rounded-xl border-2 border-transparent transition-colors"
                 >
-                  <Image src={image.url} alt="" fill sizes="64px" className="object-cover" />
+                  <Image src={image.url} alt="" fill sizes="80px" className="object-cover" />
                 </div>
               ))}
             </div>
@@ -66,20 +66,20 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
         </div>
       ) : (
         <div
-          className="bg-muted flex aspect-square items-center justify-center rounded-lg"
+          className="bg-muted flex aspect-square items-center justify-center rounded-2xl"
           aria-hidden="true"
         >
           <span className="text-muted-foreground text-sm">Sem foto</span>
         </div>
       )}
 
-      <div className="space-y-2">
+      <div className="space-y-3">
         {product.status === "sold_out" ? <Badge variant="warning">Esgotado</Badge> : null}
-        <h1 className="text-xl font-semibold">{product.name}</h1>
+        <h1 className="text-xl font-bold tracking-tight">{product.name}</h1>
         {product.teams ? (
           <Link
             href={`/time/${product.teams.slug}`}
-            className="text-muted-foreground text-sm underline"
+            className="text-accent inline-flex items-center gap-1 text-sm font-medium underline-offset-2 hover:underline"
           >
             {product.teams.name}
           </Link>
@@ -102,16 +102,16 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
       />
 
       {product.description ? (
-        <div className="space-y-2">
-          <h2 className="text-sm font-semibold">Descrição</h2>
-          <p className="text-muted-foreground text-sm whitespace-pre-line">{product.description}</p>
+        <div className="rounded-xl bg-muted/50 p-4 space-y-2">
+          <h2 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Descrição</h2>
+          <p className="text-muted-foreground text-sm whitespace-pre-line leading-relaxed">{product.description}</p>
         </div>
       ) : null}
 
       {related.length > 0 ? (
         <div className="space-y-3">
-          <h2 className="text-sm font-semibold">Produtos relacionados</h2>
-          <div className="grid grid-cols-2 gap-3">
+          <h2 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Produtos relacionados</h2>
+          <div className="grid grid-cols-2 gap-3 sm:gap-4">
             {related.map((item) => (
               <ProductCard key={item.id} product={item} />
             ))}
