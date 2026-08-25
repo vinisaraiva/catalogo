@@ -1,8 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
-import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { PriceBlock } from "@/components/storefront/price-block";
+import { getPriceDisplay } from "@/domain/price";
 import type { PublicProductRow } from "@/lib/queries/public-products";
 
 /**
@@ -16,15 +15,20 @@ import type { PublicProductRow } from "@/lib/queries/public-products";
  */
 export function ProductCard({ product }: { product: PublicProductRow }) {
   const cover = product.product_images[0] ?? null;
+  const display = getPriceDisplay({
+    price: product.price,
+    promotionalPrice: product.promotional_price,
+    priceDisplayMode: product.price_display_mode,
+  });
 
   return (
     <Link href={`/produto/${product.slug}`} className="group block h-full">
-      <Card className="h-full overflow-hidden rounded-xl border-border/60 transition-all duration-200 group-hover:shadow-lg group-hover:shadow-black/5 group-hover:-translate-y-0.5">
+      <div className="h-full overflow-hidden rounded-2xl border border-border/40 bg-card transition-all duration-200 group-hover:shadow-lg group-hover:shadow-black/5 group-hover:-translate-y-0.5">
         <div className="bg-muted relative aspect-square overflow-hidden" aria-hidden="true">
           {cover ? (
             <Image
               src={cover.url}
-              alt=""
+              alt={product.name}
               fill
               sizes="(min-width: 640px) 200px, 50vw"
               className="object-cover transition-transform duration-300 group-hover:scale-105"
@@ -40,17 +44,37 @@ export function ProductCard({ product }: { product: PublicProductRow }) {
             </div>
           ) : null}
         </div>
-        <CardContent className="space-y-1.5 p-3">
-          <p className="truncate text-sm font-semibold leading-snug">{product.name}</p>
-          <p className="text-muted-foreground truncate text-xs">{product.teams?.name ?? ""}</p>
-          <PriceBlock
-            price={product.price}
-            promotionalPrice={product.promotional_price}
-            priceDisplayMode={product.price_display_mode}
-            className="text-sm"
-          />
-        </CardContent>
-      </Card>
+
+        <div className="flex flex-col gap-2 p-3">
+          <div className="space-y-0.5">
+            <p className="truncate text-sm font-semibold leading-snug">{product.name}</p>
+            {product.teams?.name ? (
+              <p className="text-muted-foreground truncate text-xs">{product.teams.name}</p>
+            ) : null}
+          </div>
+
+          {display.mode !== "hidden" ? (
+            <div className="space-y-0.5">
+              {display.mode === "consult" ? (
+                <p className="text-xs text-muted-foreground">{display.label}</p>
+              ) : (
+                <>
+                  {display.originalLabel ? (
+                    <p className="text-muted-foreground text-xs line-through">De: {display.originalLabel}</p>
+                  ) : null}
+                  <p className="text-sm font-bold text-foreground">
+                    {display.originalLabel ? "A partir de " : ""}{display.label}
+                  </p>
+                </>
+              )}
+            </div>
+          ) : null}
+
+          <div className="bg-accent/10 text-accent mt-auto flex items-center justify-center gap-1.5 rounded-xl py-2 text-xs font-semibold transition-colors group-hover:bg-accent/20">
+            Ver mais
+          </div>
+        </div>
+      </div>
     </Link>
   );
 }

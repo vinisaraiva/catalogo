@@ -5,7 +5,7 @@ import { listPublicProducts } from "@/lib/queries/public-products";
 import { TeamCard } from "@/components/storefront/team-card";
 import { ProductCard } from "@/components/storefront/product-card";
 import { WhatsappCta } from "@/components/storefront/whatsapp-cta";
-import { Shirt } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 
 /**
  * PRD §17 "Catálogo público" / Home. "Retrô" is treated as the collection
@@ -42,26 +42,15 @@ export default async function StorefrontHomePage() {
     retroProducts.length > 0;
 
   return (
-    <div className="space-y-10">
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#0f172a] via-[#1e293b] to-accent/80 p-6 text-white animate-fade-in">
-        <div className="relative z-10 space-y-3">
-          <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-widest text-white/60">
-            <Shirt className="size-4" aria-hidden="true" />
-            <span>{store.name}</span>
-          </div>
-          <h1 className="text-2xl font-bold leading-tight tracking-tight">
-            Confira nosso<br />catálogo esportivo
-          </h1>
-          <p className="text-sm text-white/70">
-            Camisas de times, seleções e muito mais.
-          </p>
-        </div>
-        <div className="absolute -top-12 -right-12 size-40 rounded-full bg-accent/20 blur-3xl" aria-hidden="true" />
-        <div className="absolute -bottom-8 -left-8 size-32 rounded-full bg-accent/10 blur-2xl" aria-hidden="true" />
+    <div className="space-y-8">
+      <div className="rounded-2xl bg-muted/50 p-5 text-center animate-fade-in">
+        <p className="text-muted-foreground text-sm leading-relaxed">
+          Surpreenda-se! Faça seu pedido através do nosso catálogo virtual.
+        </p>
       </div>
 
       {featuredTeams.length > 0 ? (
-        <Section title="Times populares" icon="star">
+        <Section title="Times populares">
           <div className="-mx-4 flex gap-3 overflow-x-auto px-4 pb-2 scrollbar-none">
             {featuredTeams.map((team) => (
               <TeamCard key={team.id} team={team} />
@@ -71,25 +60,25 @@ export default async function StorefrontHomePage() {
       ) : null}
 
       {promoProducts.length > 0 ? (
-        <Section title="Promoções" icon="fire">
+        <Section title="Promoções">
           <ProductGrid products={promoProducts} />
         </Section>
       ) : null}
 
       {newArrivals.length > 0 ? (
-        <Section title="Novidades" icon="sparkles">
+        <Section title="Novidades">
           <ProductGrid products={newArrivals} />
         </Section>
       ) : null}
 
       {featuredProducts.length > 0 ? (
-        <Section title="Destaques" icon="star">
+        <Section title="Produtos em destaque">
           <ProductGrid products={featuredProducts} />
         </Section>
       ) : null}
 
       {nationalTeams.length > 0 ? (
-        <Section title="Seleções" icon="trophy">
+        <Section title="Seleções">
           <div className="-mx-4 flex gap-3 overflow-x-auto px-4 pb-2 scrollbar-none">
             {nationalTeams.map((team) => (
               <TeamCard key={team.id} team={team} />
@@ -99,59 +88,36 @@ export default async function StorefrontHomePage() {
       ) : null}
 
       {retroProducts.length > 0 ? (
-        <Section title="Retrô" icon="clock">
+        <Section title="Retrô">
           <ProductGrid products={retroProducts} />
         </Section>
       ) : null}
 
       {!hasContent ? (
         <div className="flex flex-col items-center justify-center py-16 text-center">
-          <div className="bg-muted mb-4 flex size-16 items-center justify-center rounded-full">
-            <Shirt className="text-muted-foreground size-8" />
-          </div>
           <p className="text-muted-foreground text-sm">
             Catálogo em preparação — volte em breve.
           </p>
         </div>
       ) : null}
 
-      {store.whatsapp_number ? (
-        <WhatsappCta
-          phoneNumber={store.whatsapp_number}
-          message={`Olá! Vi o catálogo da ${store.name} e gostaria de saber mais.`}
-          className="fixed right-4 bottom-20 z-10 shadow-lg animate-pulse-slow"
-        >
-          Fale conosco
-        </WhatsappCta>
-      ) : null}
+      <WhatsappCta
+        phoneNumber={store.whatsapp_number ?? ""}
+        message={`Olá! Vi o catálogo da ${store.name} e gostaria de saber mais.`}
+        className="fixed right-4 bottom-20 z-10 rounded-full shadow-lg"
+      >
+        Fale conosco
+      </WhatsappCta>
     </div>
   );
 }
 
-function Section({
-  title,
-  icon,
-  children,
-}: {
-  title: string;
-  icon?: "star" | "fire" | "sparkles" | "trophy" | "clock";
-  children: React.ReactNode;
-}) {
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section className="space-y-3">
-      <div className="flex items-center gap-2.5">
-        {icon === "star" ? (
-          <span className="text-accent text-sm" aria-hidden="true">★</span>
-        ) : icon === "fire" ? (
-          <span className="text-sm" aria-hidden="true">🔥</span>
-        ) : icon === "sparkles" ? (
-          <span className="text-sm" aria-hidden="true">✨</span>
-        ) : icon === "trophy" ? (
-          <span className="text-sm" aria-hidden="true">🏆</span>
-        ) : icon === "clock" ? (
-          <span className="text-sm" aria-hidden="true">🕐</span>
-        ) : null}
-        <h2 className="text-base font-bold tracking-tight">{title}</h2>
+      <div className="flex items-center justify-between">
+        <h2 className="text-sm font-bold uppercase tracking-wider text-foreground">{title}</h2>
+        <ArrowRight className="size-4 text-muted-foreground" aria-hidden="true" />
       </div>
       {children}
     </section>
@@ -160,7 +126,7 @@ function Section({
 
 function ProductGrid({ products }: { products: Awaited<ReturnType<typeof listPublicProducts>> }) {
   return (
-    <div className="grid grid-cols-2 gap-3 sm:gap-4">
+    <div className="grid grid-cols-2 gap-3">
       {products.map((product) => (
         <ProductCard key={product.id} product={product} />
       ))}

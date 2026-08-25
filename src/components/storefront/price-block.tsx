@@ -18,15 +18,17 @@ export function PriceBlock({
   if (display.mode === "hidden") return null;
 
   if (display.mode === "consult") {
-    return <p className={cn("text-sm font-semibold text-accent", className)}>{display.label}</p>;
+    return <p className={cn("text-xs text-muted-foreground", className)}>{display.label}</p>;
   }
 
   return (
-    <p className={cn("flex items-baseline gap-2", className)}>
-      <span className="font-bold text-accent">{display.label}</span>
+    <div className={cn("space-y-0.5", className)}>
       {display.originalLabel ? (
-        <span className="text-muted-foreground text-sm line-through">{display.originalLabel}</span>
+        <p className="text-muted-foreground text-xs line-through">De: {display.originalLabel}</p>
       ) : null}
-    </p>
+      <p className="text-sm font-bold text-foreground">
+        {display.originalLabel ? "A partir de " : ""}{display.label}
+      </p>
+    </div>
   );
 }
