@@ -1,23 +1,26 @@
 import Link from "next/link";
-import { Card, CardContent } from "@/components/ui/card";
 import type { TeamRow } from "@/lib/queries/teams";
 
+/**
+ * "Crest medallion" treatment: a circular badge frame (like a team crest
+ * patch) instead of a plain rectangular photo card — reads immediately as
+ * "team", which a generic bordered rectangle doesn't.
+ */
 export function TeamCard({ team }: { team: Pick<TeamRow, "slug" | "name" | "logo_url"> }) {
   return (
-    <Link href={`/time/${team.slug}`} className="group shrink-0">
-      <Card className="w-32 rounded-xl border-border/60 transition-all duration-200 group-hover:shadow-md group-hover:shadow-black/5 group-hover:-translate-y-0.5 group-hover:border-accent/30">
-        <CardContent className="flex flex-col items-center gap-2.5 p-4 text-center">
-          {team.logo_url ? (
-            // eslint-disable-next-line @next/next/no-img-element -- arbitrary admin-entered URL, not a known image host
-            <div className="bg-muted flex h-14 w-14 items-center justify-center rounded-full p-1 transition-transform duration-200 group-hover:scale-110">
-              <img src={team.logo_url} alt="" loading="lazy" className="h-full w-full object-contain" />
-            </div>
-          ) : (
-            <div className="bg-muted flex h-14 w-14 items-center justify-center rounded-full transition-transform duration-200 group-hover:scale-110" aria-hidden="true" />
-          )}
-          <span className="line-clamp-2 text-xs font-semibold leading-tight">{team.name}</span>
-        </CardContent>
-      </Card>
+    <Link
+      href={`/time/${team.slug}`}
+      className="group flex w-20 shrink-0 snap-start flex-col items-center gap-2 text-center"
+    >
+      <span className="ring-border group-hover:ring-primary bg-card flex h-16 w-16 items-center justify-center rounded-full p-2 ring-2 transition-all duration-200 group-hover:shadow-md group-hover:shadow-primary/20">
+        {team.logo_url ? (
+          // eslint-disable-next-line @next/next/no-img-element -- arbitrary admin-entered URL, not a known image host
+          <img src={team.logo_url} alt="" loading="lazy" className="h-full w-full object-contain" />
+        ) : (
+          <span className="bg-muted h-full w-full rounded-full" aria-hidden="true" />
+        )}
+      </span>
+      <span className="line-clamp-2 text-xs font-medium">{team.name}</span>
     </Link>
   );
 }

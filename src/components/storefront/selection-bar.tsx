@@ -20,13 +20,12 @@ export function SelectionBar({ whatsappNumber }: { whatsappNumber: string | null
 
   if (items.length === 0) return null;
 
-  const label = `${items.length} ${items.length === 1 ? "camisa selecionada" : "camisas selecionadas"}`;
   const href = whatsappNumber
     ? buildWhatsappUrl(whatsappNumber, buildSelectionMessage(items))
     : null;
 
   return (
-    <div className="border-border/50 fixed inset-x-0 bottom-0 z-20 border-t bg-gradient-to-b from-background to-background/95 shadow-[0_-4px_20px_rgba(0,0,0,0.08)] backdrop-blur-lg">
+    <div className="border-border bg-popover animate-selection-bar-in fixed inset-x-0 bottom-0 z-20 border-t shadow-lg">
       {expanded ? (
         <ul className="max-h-60 space-y-2 overflow-y-auto px-4 py-3">
           {items.map((item) => (
@@ -51,14 +50,15 @@ export function SelectionBar({ whatsappNumber }: { whatsappNumber: string | null
         </ul>
       ) : null}
 
-      <div className="flex items-center gap-3 px-4 py-3">
+      <div className="flex items-center gap-2 px-4 py-3">
         <button
           type="button"
           onClick={() => setExpanded((value) => !value)}
           aria-expanded={expanded}
-          className="flex-1 truncate text-left text-sm font-semibold underline-offset-2 hover:underline"
+          className="flex-1 truncate text-left text-sm font-medium underline-offset-2 hover:underline"
         >
-          {label}
+          <span className="text-primary font-display mr-1.5 tracking-wide">{items.length}</span>
+          {items.length === 1 ? "camisa selecionada" : "camisas selecionadas"}
         </button>
         {expanded ? (
           <Button type="button" variant="ghost" size="sm" onClick={clear}>
@@ -70,10 +70,7 @@ export function SelectionBar({ whatsappNumber }: { whatsappNumber: string | null
             href={href}
             target="_blank"
             rel="noopener noreferrer"
-            className={cn(
-              buttonVariants({ size: "sm" }),
-              "shrink-0 bg-[#25d366] hover:bg-[#20ba5c] text-white shadow-md shadow-[#25d366]/20",
-            )}
+            className={cn(buttonVariants({ variant: "whatsapp", size: "sm" }), "shrink-0")}
           >
             <MessageCircle aria-hidden="true" /> Finalizar
           </a>

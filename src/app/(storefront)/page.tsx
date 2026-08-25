@@ -5,7 +5,7 @@ import { listPublicProducts } from "@/lib/queries/public-products";
 import { TeamCard } from "@/components/storefront/team-card";
 import { ProductCard } from "@/components/storefront/product-card";
 import { WhatsappCta } from "@/components/storefront/whatsapp-cta";
-import { ArrowRight } from "lucide-react";
+import { Shirt } from "lucide-react";
 
 /**
  * PRD §17 "Catálogo público" / Home. "Retrô" is treated as the collection
@@ -33,25 +33,28 @@ export default async function StorefrontHomePage() {
     ? await listPublicProducts(store.id, { collectionId: retroCollection.id, limit: 8 })
     : [];
 
-  const hasContent =
-    featuredTeams.length > 0 ||
-    promoProducts.length > 0 ||
-    newArrivals.length > 0 ||
-    featuredProducts.length > 0 ||
-    nationalTeams.length > 0 ||
-    retroProducts.length > 0;
-
   return (
-    <div className="space-y-8">
-      <div className="rounded-2xl bg-muted/50 p-5 text-center animate-fade-in">
-        <p className="text-muted-foreground text-sm leading-relaxed">
-          Surpreenda-se! Faça seu pedido através do nosso catálogo virtual.
-        </p>
+    <div className="space-y-10">
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary via-primary/90 to-accent p-6 text-white shadow-lg shadow-primary/20">
+        <div className="relative z-10 space-y-3">
+          <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-widest text-white/70">
+            <Shirt className="size-4" aria-hidden="true" />
+            <span>{store.name}</span>
+          </div>
+          <h1 className="text-2xl font-bold leading-tight tracking-tight uppercase">
+            Confira nosso<br />catálogo esportivo
+          </h1>
+          <p className="text-sm text-white/80">
+            Camisas de times, seleções e muito mais.
+          </p>
+        </div>
+        <div className="absolute -top-12 -right-12 size-40 rounded-full bg-white/10 blur-3xl" aria-hidden="true" />
+        <div className="absolute -bottom-8 -left-8 size-32 rounded-full bg-white/5 blur-2xl" aria-hidden="true" />
       </div>
 
       {featuredTeams.length > 0 ? (
         <Section title="Times populares">
-          <div className="-mx-4 flex gap-3 overflow-x-auto px-4 pb-2 scrollbar-none">
+          <div className="hide-scrollbar -mx-4 flex snap-x gap-3 overflow-x-auto px-4 pb-1">
             {featuredTeams.map((team) => (
               <TeamCard key={team.id} team={team} />
             ))}
@@ -72,14 +75,14 @@ export default async function StorefrontHomePage() {
       ) : null}
 
       {featuredProducts.length > 0 ? (
-        <Section title="Produtos em destaque">
+        <Section title="Destaques">
           <ProductGrid products={featuredProducts} />
         </Section>
       ) : null}
 
       {nationalTeams.length > 0 ? (
         <Section title="Seleções">
-          <div className="-mx-4 flex gap-3 overflow-x-auto px-4 pb-2 scrollbar-none">
+          <div className="hide-scrollbar -mx-4 flex snap-x gap-3 overflow-x-auto px-4 pb-1">
             {nationalTeams.map((team) => (
               <TeamCard key={team.id} team={team} />
             ))}
@@ -93,21 +96,32 @@ export default async function StorefrontHomePage() {
         </Section>
       ) : null}
 
-      {!hasContent ? (
+      {featuredTeams.length === 0 &&
+      promoProducts.length === 0 &&
+      newArrivals.length === 0 &&
+      featuredProducts.length === 0 &&
+      nationalTeams.length === 0 &&
+      retroProducts.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 text-center">
+          <div className="bg-muted mb-4 flex size-16 items-center justify-center rounded-full">
+            <Shirt className="text-muted-foreground size-8" />
+          </div>
           <p className="text-muted-foreground text-sm">
             Catálogo em preparação — volte em breve.
           </p>
         </div>
       ) : null}
 
-      <WhatsappCta
-        phoneNumber={store.whatsapp_number ?? ""}
-        message={`Olá! Vi o catálogo da ${store.name} e gostaria de saber mais.`}
-        className="fixed right-4 bottom-20 z-10 rounded-full shadow-lg"
-      >
-        Fale conosco
-      </WhatsappCta>
+      {store.whatsapp_number ? (
+        <WhatsappCta
+          phoneNumber={store.whatsapp_number}
+          message={`Olá! Vi o catálogo da ${store.name} e gostaria de saber mais.`}
+          className="animate-whatsapp-pulse fixed right-4 bottom-24 z-10 rounded-full shadow-lg"
+          size="lg"
+        >
+          Fale conosco
+        </WhatsappCta>
+      ) : null}
     </div>
   );
 }
@@ -115,9 +129,9 @@ export default async function StorefrontHomePage() {
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section className="space-y-3">
-      <div className="flex items-center justify-between">
-        <h2 className="text-sm font-bold uppercase tracking-wider text-foreground">{title}</h2>
-        <ArrowRight className="size-4 text-muted-foreground" aria-hidden="true" />
+      <div className="space-y-1.5">
+        <h2 className="font-display text-2xl tracking-wide uppercase">{title}</h2>
+        <div className="bg-primary h-1 w-10 rounded-full" aria-hidden="true" />
       </div>
       {children}
     </section>

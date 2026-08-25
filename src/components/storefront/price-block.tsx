@@ -2,6 +2,13 @@ import { getPriceDisplay } from "@/domain/price";
 import type { PriceDisplayMode } from "@/types/database";
 import { cn } from "@/lib/utils";
 
+/**
+ * The active price renders in the display font/gold accent — a jersey
+ * shop's price tag gets the same "scoreboard numerals" treatment as
+ * section headings and team names (see `(storefront)/layout.tsx`'s font
+ * comment), so it reads as a deliberate price tag, not just another line
+ * of body text.
+ */
 export function PriceBlock({
   price,
   promotionalPrice,
@@ -18,17 +25,17 @@ export function PriceBlock({
   if (display.mode === "hidden") return null;
 
   if (display.mode === "consult") {
-    return <p className={cn("text-xs text-muted-foreground", className)}>{display.label}</p>;
+    return (
+      <p className={cn("text-muted-foreground text-sm font-medium", className)}>{display.label}</p>
+    );
   }
 
   return (
-    <div className={cn("space-y-0.5", className)}>
+    <p className={cn("flex items-baseline gap-2", className)}>
+      <span className="font-display text-primary tracking-wide">{display.label}</span>
       {display.originalLabel ? (
-        <p className="text-muted-foreground text-xs line-through">De: {display.originalLabel}</p>
+        <span className="text-muted-foreground text-xs line-through">{display.originalLabel}</span>
       ) : null}
-      <p className="text-sm font-bold text-foreground">
-        {display.originalLabel ? "A partir de " : ""}{display.label}
-      </p>
-    </div>
+    </p>
   );
 }

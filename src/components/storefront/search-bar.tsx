@@ -18,7 +18,7 @@ export function SearchBar({ defaultValue }: { defaultValue?: string }) {
         name="q"
         defaultValue={defaultValue}
         placeholder="Buscar time, produto, temporada..."
-        className="h-11 rounded-xl border-border/60 bg-muted/50 pl-9 text-sm placeholder:text-muted-foreground/60 focus:border-accent focus:ring-accent/20"
+        className="h-11 rounded-xl border-border/60 bg-white/80 pl-9 text-sm placeholder:text-muted-foreground/60 focus:border-primary focus:ring-primary/20"
         aria-label="Buscar no catálogo"
       />
     </form>

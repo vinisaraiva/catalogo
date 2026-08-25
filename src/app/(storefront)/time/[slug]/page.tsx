@@ -72,36 +72,34 @@ export default async function TeamPage({
     : allProducts;
 
   return (
-    <div className="space-y-6">
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-muted/80 to-muted p-6">
-        <div className="flex items-center gap-4">
+    <div className="space-y-4">
+      <div className="flex items-center gap-3">
+        <span className="ring-border bg-card flex h-16 w-16 shrink-0 items-center justify-center rounded-full p-2 ring-2">
           {team.logo_url ? (
             // eslint-disable-next-line @next/next/no-img-element -- arbitrary admin-entered URL, not a known image host
-            <div className="bg-background flex size-16 items-center justify-center rounded-2xl p-2 shadow-sm">
-              <img src={team.logo_url} alt="" className="h-full w-full object-contain" />
-            </div>
+            <img src={team.logo_url} alt="" className="h-full w-full object-contain" />
           ) : (
-            <div className="bg-background flex size-16 items-center justify-center rounded-2xl shadow-sm" aria-hidden="true" />
+            <span className="bg-muted h-full w-full rounded-full" aria-hidden="true" />
           )}
-          <div>
-            <h1 className="text-xl font-bold tracking-tight">{team.name}</h1>
-            <p className="text-muted-foreground text-xs font-medium">
-              {TEAM_TYPE_LABEL[team.type] ?? team.type} · {allProducts.length}{" "}
-              {allProducts.length === 1 ? "produto" : "produtos"}
-            </p>
-          </div>
+        </span>
+        <div>
+          <h1 className="font-display text-2xl tracking-wide uppercase">{team.name}</h1>
+          <p className="text-muted-foreground text-xs">
+            {TEAM_TYPE_LABEL[team.type] ?? team.type} · {allProducts.length}{" "}
+            {allProducts.length === 1 ? "produto" : "produtos"}
+          </p>
         </div>
       </div>
 
       {filters.length > 0 ? (
-        <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1">
+        <div className="hide-scrollbar -mx-4 flex gap-1.5 overflow-x-auto px-4">
           <Link
             href={`/time/${slug}`}
             className={cn(
-              "shrink-0 rounded-full border px-4 py-1.5 text-xs font-semibold transition-colors",
+              "shrink-0 rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors",
               !f
                 ? "bg-primary text-primary-foreground border-primary"
-                : "border-border/60 text-muted-foreground hover:border-border hover:bg-muted/50",
+                : "border-input text-muted-foreground hover:bg-accent",
             )}
           >
             Todos
@@ -111,10 +109,10 @@ export default async function TeamPage({
               key={`${filter.kind}:${filter.value}`}
               href={`/time/${slug}?f=${filter.kind}:${encodeURIComponent(filter.value)}`}
               className={cn(
-                "shrink-0 rounded-full border px-4 py-1.5 text-xs font-semibold transition-colors",
+                "shrink-0 rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors",
                 activeKind === filter.kind && activeValue === filter.value
                   ? "bg-primary text-primary-foreground border-primary"
-                  : "border-border/60 text-muted-foreground hover:border-border hover:bg-muted/50",
+                  : "border-input text-muted-foreground hover:bg-accent",
               )}
             >
               {filter.label}
@@ -124,9 +122,9 @@ export default async function TeamPage({
       ) : null}
 
       {filteredProducts.length === 0 ? (
-        <p className="text-muted-foreground text-sm">Nenhum produto encontrado.</p>
+        <p className="text-muted-foreground py-8 text-center text-sm">Nenhum produto encontrado.</p>
       ) : (
-        <div className="grid grid-cols-2 gap-3 sm:gap-4">
+        <div className="grid grid-cols-2 gap-3">
           {filteredProducts.map((product) => (
             <ProductCard key={product.id} product={product} />
           ))}
