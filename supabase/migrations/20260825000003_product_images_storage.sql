@@ -14,6 +14,10 @@
 -- `IMAGE_TYPE_FOLDER` in src/domain/product-image.ts for the mapping and
 -- DECISIONS.md ADR-027 for why `detail` shares `original/` and
 -- `social_feed`/`social_story` share `social/`.
+--
+-- Every `create policy` below is preceded by `drop policy if exists`, same
+-- rationale as 20260825000002_rls_policies.sql — see
+-- plans/006-idempotent-rls-storage-policies.md.
 -- ============================================================================
 
 insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
@@ -46,6 +50,8 @@ on conflict (id) do nothing;
 -- table itself) is what actually keeps a draft/hidden product's image URLs
 -- from ever reaching an anonymous catalog request in the first place.
 -- ----------------------------------------------------------------------------
+drop policy if exists "product_images_storage_insert_own_store" on storage.objects;
+
 create policy "product_images_storage_insert_own_store"
   on storage.objects for insert
   to authenticated
@@ -53,6 +59,8 @@ create policy "product_images_storage_insert_own_store"
     bucket_id = 'product-images'
     and public.is_store_member(((storage.foldername(name))[2])::uuid)
   );
+
+drop policy if exists "product_images_storage_update_own_store" on storage.objects;
 
 create policy "product_images_storage_update_own_store"
   on storage.objects for update
@@ -65,6 +73,8 @@ create policy "product_images_storage_update_own_store"
     bucket_id = 'product-images'
     and public.is_store_member(((storage.foldername(name))[2])::uuid)
   );
+
+drop policy if exists "product_images_storage_delete_own_store" on storage.objects;
 
 create policy "product_images_storage_delete_own_store"
   on storage.objects for delete

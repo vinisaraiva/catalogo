@@ -12,6 +12,7 @@ import {
   isAllowedImageSize,
 } from "@/domain/product-image";
 import { productImageUploadTypeSchema } from "@/validations/product";
+import { isValidReorder } from "@/domain/product-image-reorder";
 import type { Database } from "@/types/database";
 import { actionError, actionOk, type ActionResult } from "./result";
 
@@ -156,7 +157,10 @@ export async function uploadProductImages(
  * no-op, not an error). The opposite order risks a row silently pointing
  * at nothing with no visible sign anything is wrong.
  */
-export async function deleteProductImage(imageId: string, productId: string): Promise<ActionResult> {
+export async function deleteProductImage(
+  imageId: string,
+  productId: string,
+): Promise<ActionResult> {
   const { store } = await requireStoreMembership();
   const supabase = await createClient();
 
@@ -220,10 +224,10 @@ export async function reorderProductImages(
     return actionError(`Não foi possível carregar as imagens: ${currentError.message}`);
   }
 
-  const currentIds = new Set((current ?? []).map((row) => row.id));
-  const sameSet =
-    orderedIds.length === currentIds.size && orderedIds.every((id) => currentIds.has(id));
-  if (!sameSet) return actionError("Lista de imagens desatualizada — recarregue a página.");
+  const currentIds = (current ?? []).map((row) => row.id);
+  if (!isValidReorder(currentIds, orderedIds)) {
+    return actionError("Lista de imagens desatualizada — recarregue a página.");
+  }
 
   const results = await Promise.all(
     orderedIds.map((id, index) =>

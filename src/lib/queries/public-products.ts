@@ -1,5 +1,6 @@
 import "server-only";
 import { createClient } from "@/lib/supabase/server";
+import { escapePostgrestFilterValue } from "@/domain/postgrest-filter";
 import type { Database } from "@/types/database";
 
 export type PublicProductRow = Database["public"]["Tables"]["products"]["Row"] & {
@@ -126,7 +127,13 @@ export async function searchPublicProducts(
       supabase.from("competitions").select("id").eq("store_id", storeId).ilike("name", term),
     ]);
 
-  const orParts = [`name.ilike.${term}`, `season.ilike.${term}`];
+  // `term` is user-supplied — escape it before splicing into the .or()
+  // filter string so a comma/paren in the search text can't break or
+  // smuggle extra clauses into the combined PostgREST expression (the
+  // team/collection/competition id lists below are safe unescaped: they
+  // come from our own prior queries, not from user input).
+  const escapedTerm = escapePostgrestFilterValue(term);
+  const orParts = [`name.ilike.${escapedTerm}`, `season.ilike.${escapedTerm}`];
   if (teamMatches?.length) orParts.push(`team_id.in.(${teamMatches.map((t) => t.id).join(",")})`);
   if (collectionMatches?.length) {
     orParts.push(`collection_id.in.(${collectionMatches.map((c) => c.id).join(",")})`);

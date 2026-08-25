@@ -25,12 +25,14 @@ and a byte-for-byte diff between the mirror and the real device folder
 
 | # | Plan | Category | Status |
 |---|---|---|---|
-| 1 | [001-urgent-secrets-and-vcs-hygiene.md](001-urgent-secrets-and-vcs-hygiene.md) | security / process | TODO — **do this first, manually** |
-| 2 | [002-cross-store-reference-ownership-check.md](002-cross-store-reference-ownership-check.md) | correctness / security | TODO |
-| 3 | [003-search-filter-injection-crash.md](003-search-filter-injection-crash.md) | correctness | TODO |
-| 4 | [004-reorder-duplicate-id-validation.md](004-reorder-duplicate-id-validation.md) | correctness | TODO |
-| 5 | [005-cross-store-mutation-integration-test.md](005-cross-store-mutation-integration-test.md) | test-coverage | TODO — depends on #2 (see below) |
-| 6 | [006-idempotent-rls-storage-policies.md](006-idempotent-rls-storage-policies.md) | dx-tooling | TODO |
+| 1 | [001-urgent-secrets-and-vcs-hygiene.md](001-urgent-secrets-and-vcs-hygiene.md) | security / process | IN PROGRESS — secrets quarantined out of the repo, `.gitignore` updated, work committed (`3c0927e`) and pushed. **Still open: rotate the anon key, service-role key, and personal access token in the Supabase dashboard, then delete `_to_delete/`** — nobody has done this yet. |
+| 2 | [002-cross-store-reference-ownership-check.md](002-cross-store-reference-ownership-check.md) | correctness / security | DONE — `verifyReferencesOwnedByStore` added to `src/lib/actions/products.ts`, called from both `createProduct`/`updateProduct`. `typecheck`/`lint`/`test`/`build` all pass. |
+| 3 | [003-search-filter-injection-crash.md](003-search-filter-injection-crash.md) | correctness | DONE — `src/domain/postgrest-filter.ts` (+ 5 tests) added; `searchPublicProducts` now escapes the search term before splicing it into the `.or()` filter. |
+| 4 | [004-reorder-duplicate-id-validation.md](004-reorder-duplicate-id-validation.md) | correctness | DONE — `src/domain/product-image-reorder.ts` (+ 6 tests) added; `reorderProductImages` now uses `isValidReorder` instead of the multiset-blind check. |
+| 5 | [005-cross-store-mutation-integration-test.md](005-cross-store-mutation-integration-test.md) | test-coverage | DONE — new fixtures (second store/team/user) and a 4th `it` block added to `public-visibility.integration.test.ts`. Still skips without live Supabase credentials, same as the rest of that file — hasn't been run against a real project yet. |
+| 6 | [006-idempotent-rls-storage-policies.md](006-idempotent-rls-storage-policies.md) | dx-tooling | DONE — `drop policy if exists` added before all 25 policies across both migration files (in place, per the plan's default option — single environment, no CI yet). |
+
+All five code plans (2–6) were implemented directly (not via an isolated-worktree executor subagent — this repo only exists as a real git repo on the user's device via the remote bridge, not as a local clone this session could fork a worktree from) and validated together: `npm run typecheck`, `npm run lint`, `npm run test` (57 passed / 4 skipped — up from 46 passed / 3 skipped before this round), and `npm run build` all pass clean in the cloud-workspace mirror before being pushed to the real project.
 
 ## Dependency notes
 
