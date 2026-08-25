@@ -1,0 +1,12 @@
+.next
+node_modules
+supabase/.temp
+
+# Pre-existing / approved project docs (CLAUDE.md workflow docs) — not
+# reformatted by tooling; README.md (ours) is not excluded.
+CLAUDE.md
+PRD.md
+ARCHITECTURE.md
+DECISIONS.md
+TASKS.md
+README_DOCS.md
