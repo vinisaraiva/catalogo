@@ -10,6 +10,32 @@
  *
  * Usage: npm run seed
  */
+
+// Load .env.local so tsx picks up all variables without Next.js runtime.
+import { readFileSync, existsSync } from "fs";
+import { resolve } from "path";
+
+const envFiles = [".env.local", ".env"];
+for (const file of envFiles) {
+  const envPath = resolve(process.cwd(), file);
+  if (existsSync(envPath)) {
+    const lines = readFileSync(envPath, "utf-8").split("\n");
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (!trimmed || trimmed.startsWith("#")) continue;
+      const eqIdx = trimmed.indexOf("=");
+      if (eqIdx === -1) continue;
+      const key = trimmed.slice(0, eqIdx).trim();
+      const value = trimmed.slice(eqIdx + 1).trim();
+      if (!(key in process.env)) {
+        process.env[key] = value;
+      }
+    }
+    console.log(`Loaded env from ${file}`);
+    break;
+  }
+}
+
 import { createAdminClient } from "../src/lib/supabase/admin";
 
 const STORE_SLUG = process.env.DEFAULT_STORE_SLUG || "loja-dev";

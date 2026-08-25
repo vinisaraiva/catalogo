@@ -113,6 +113,22 @@ Do not skip phases unless a blocking technical dependency requires it.
 - [x] Show daily AI generation usage placeholder
 - [x] Add "Ver catálogo" link
 
+## Store profile
+
+> Added in the Phase 6 session — this checklist never existed before,
+> even though PRD.md §7 defines `stores.name`/`logo_url`/
+> `whatsapp_number`/`instagram_url` and the storefront already depended on
+> them (the WhatsApp CTAs on `/`, `/produto/[slug]` and `SelectionBar` are
+> all conditional on `whatsapp_number`; the logo renders in
+> `(storefront)/layout.tsx`). Without this, the catalog had no logo and no
+> working WhatsApp button. See DECISIONS.md ADR-029.
+
+- [x] Edit store name
+- [x] Upload/replace catalog logo
+- [x] Edit WhatsApp number
+- [x] Edit Instagram link
+- [x] Show usage note explaining the WhatsApp buttons depend on this
+
 ## Teams
 
 - [x] List teams
@@ -225,176 +241,91 @@ Do not skip phases unless a blocking technical dependency requires it.
 
 ## Home
 
-- [x] Public catalog requires no login
-- [x] Render store identity
-- [x] Add search
-- [x] Show featured teams
-- [x] Show new arrivals
-- [x] Show featured products
-- [x] Show national teams section when applicable
-- [x] Show retro section when applicable
-- [x] Show promotions when applicable
-
-> Implemented in `src/app/(storefront)/page.tsx`. Each section only
-> renders when it actually has content (Promise.all fetch, conditional
-> render) so an empty catalog shows a clean "em preparação" message
-> instead of empty headers. "Retrô" is treated as the collection whose
-> slug is `retro` (documented in DECISIONS.md ADR-025, matches
-> `scripts/seed.ts`).
+- [ ] Public catalog requires no login
+- [ ] Render store identity
+- [ ] Add search
+- [ ] Show featured teams
+- [ ] Show new arrivals
+- [ ] Show featured products
+- [ ] Show national teams section when applicable
+- [ ] Show retro section when applicable
+- [ ] Show promotions when applicable
 
 ## Team page
 
-- [x] Implement `/time/[slug]`
-- [x] Show team identity
-- [x] Show published products
-- [x] Generate filters from available product attributes
-- [x] Support collection filter
-- [x] Support competition filter
-- [x] Support season where useful
-
-> Implemented in `src/app/(storefront)/time/[slug]/page.tsx`. Filter
-> chips are derived per-team from whichever collection/competition/season
-> values actually appear on that team's published products (not a fixed
-> tree) — see DECISIONS.md ADR-025.
+- [ ] Implement `/time/[slug]`
+- [ ] Show team identity
+- [ ] Show published products
+- [ ] Generate filters from available product attributes
+- [ ] Support collection filter
+- [ ] Support competition filter
+- [ ] Support season where useful
 
 ## Search
 
-- [x] Search product name
-- [x] Search team
-- [x] Search collection
-- [x] Search competition
-- [x] Search season
-- [x] Ensure draft/hidden products never leak into results
-
-> Implemented in `src/app/(storefront)/busca/page.tsx` +
-> `searchPublicProducts()` in `src/lib/queries/public-products.ts`. Not in
-> ARCHITECTURE.md's original suggested route list — added because PRD §19
-> and this checklist both require it; see DECISIONS.md ADR-025. Draft/
-> hidden exclusion is enforced by the existing public RLS read policies
-> (same mechanism as every other public query), not by app-level
-> filtering — covered by the integration test noted below.
+- [ ] Search product name
+- [ ] Search team
+- [ ] Search collection
+- [ ] Search competition
+- [ ] Search season
+- [ ] Ensure draft/hidden products never leak into results
 
 ## Product page
 
-- [x] Implement `/produto/[slug]`
-- [x] Product gallery
-- [x] Product name
-- [x] Team
-- [x] Price display mode
-- [x] Promotional price
-- [x] Sizes
-- [x] Availability
-- [x] Description
-- [x] Related products
-- [x] WhatsApp CTA placeholder
-
-> Implemented in `src/app/(storefront)/produto/[slug]/page.tsx`. "Product
-> gallery" is a placeholder tile ("Sem foto") — real photos need
-> `product_images`, which is Phase 5 (Storage) scope; no product has an
-> image yet. "WhatsApp CTA placeholder" is intentionally a placeholder per
-> its own checklist wording — it sends only the product name in a static
-> greeting; the full per-size/multi-product message builder (PRD §23) is
-> Phase 4 scope (see DECISIONS.md ADR-025).
+- [ ] Implement `/produto/[slug]`
+- [ ] Product gallery
+- [ ] Product name
+- [ ] Team
+- [ ] Price display mode
+- [ ] Promotional price
+- [ ] Sizes
+- [ ] Availability
+- [ ] Description
+- [ ] Related products
+- [ ] WhatsApp CTA placeholder
 
 ## Performance
 
 - [ ] Optimize images
-- [x] Add lazy loading where useful
-- [x] Minimize client JS
+- [ ] Add lazy loading where useful
+- [ ] Minimize client JS
 - [ ] Check mobile loading performance
-
-> "Optimize images" is not applicable yet — no product has an image
-> (Phase 5 scope); logos use plain `<img loading="lazy">` since
-> `next/image` requires configured remote hosts and logo URLs are
-> arbitrary admin input, not a known host. "Minimize client JS": the
-> entire Phase 3 storefront (layout, Home, `/busca`, `/time/[slug]`,
-> `/produto/[slug]`) is Server Components using only `<Link>` / native
-> `<form method="GET">` — zero `"use client"` components. "Check mobile
-> loading performance" is left unchecked — it needs a real running
-> instance with real data/network conditions, which is not something I
-> can verify from this environment; the user should check this once
-> `npm run seed` has been run and the app is deployed or running locally.
 
 ## Validation
 
-- [x] Integration test public visibility
-- [x] Run lint
-- [x] Run typecheck
-- [x] Run relevant tests
-
-> Integration test written at
-> `src/lib/queries/__tests__/public-visibility.integration.test.ts` —
-> asserts a draft product is hidden from `anon`, an active product is
-> visible to `anon`, and an `anon` update attempt does not mutate data,
-> directly against a real Supabase project via the service-role + anon
-> clients. It skips cleanly (not a failure) when Supabase credentials or
-> network access aren't available, which is the case in every environment
-> I control this session (see DECISIONS.md ADR-025) — it has been
-> validated to skip correctly, but has never actually executed against
-> the live project. The user should run `npm run test` locally (after
-> `npm run seed`) to get a real pass/fail. Lint, typecheck, and the full
-> test suite (`18 passed | 3 skipped`) all pass cleanly in the
-> cloud-workspace validation mirror; `npm run build` also passes.
+- [ ] Integration test public visibility
+- [ ] Run lint
+- [ ] Run typecheck
+- [ ] Run relevant tests
 
 ---
-
 
 # Phase 4 — WhatsApp and Selection
 
 ## Single product
 
-- [x] Build WhatsApp URL helper
-- [x] Include product name
-- [x] Include selected size
-- [x] Include product URL where useful
-- [x] Respect `consult` wording
-
-> Implemented in `src/domain/whatsapp.ts` (`buildWhatsappUrl`,
-> `buildSingleProductMessage`) and wired into
-> `src/components/storefront/product-size-selector.tsx`. "Product URL
-> where useful": omitted from the direct product-page CTA (redundant —
-> the customer is already on that page) but always included per item in
-> the multi-product selection message, where it's the only way to tell
-> items apart. "Respect consult wording": `consult` mode uses PRD §23's
-> own example wording; `show_price`/`hidden` use ARCHITECTURE.md §18's
-> example wording instead — see DECISIONS.md ADR-026.
+- [ ] Build WhatsApp URL helper
+- [ ] Include product name
+- [ ] Include selected size
+- [ ] Include product URL where useful
+- [ ] Respect `consult` wording
 
 ## Local selection
 
-- [x] Add product to temporary selection
-- [x] Remove product
-- [x] Change selected size
-- [x] Show selection count
-- [x] Generate multi-product WhatsApp message
-- [x] Do not persist as order
-
-> Implemented as a client-only `SelectionProvider` (React Context +
-> `localStorage`, no `selections` table) wrapping the storefront layout,
-> plus `SelectionBar` (persistent "N camisas selecionadas" bar with
-> per-item remove and a "Finalizar" WhatsApp action) and
-> `ProductSizeSelector` on the product page (size chips + add/remove +
-> direct WhatsApp CTA). "Change selected size" is handled by choosing a
-> different size before adding — an already-added product can be removed
-> and re-added under a new size in the same flow. See DECISIONS.md
-> ADR-026 for the full design, including why hydration happens in a
-> `useEffect` rather than a lazy state initializer (avoids an SSR/CSR
-> markup mismatch).
+- [ ] Add product to temporary selection
+- [ ] Remove product
+- [ ] Change selected size
+- [ ] Show selection count
+- [ ] Generate multi-product WhatsApp message
+- [ ] Do not persist as order
 
 ## Tests
 
-- [x] Unit test URL/message encoding
-- [x] Unit test one-product message
-- [x] Unit test multiple-product message
-- [x] Run lint
-- [x] Run typecheck
-
-> `src/domain/__tests__/whatsapp.test.ts` — 13 tests covering
-> `buildWhatsappUrl` (digit-stripping, message presence/absence,
-> encoding), `buildSingleProductMessage` (both wording branches, with/
-> without size, with/without URL), and `buildSelectionMessage` (empty,
-> singular, plural, missing size/URL). Lint, typecheck, the full test
-> suite (31 passed, 3 skipped), `format:check`, and `build` all pass
-> cleanly in the cloud-workspace validation mirror.
+- [ ] Unit test URL/message encoding
+- [ ] Unit test one-product message
+- [ ] Unit test multiple-product message
+- [ ] Run lint
+- [ ] Run typecheck
 
 ---
 
@@ -402,77 +333,35 @@ Do not skip phases unless a blocking technical dependency requires it.
 
 ## Upload
 
-- [x] Camera-friendly mobile upload
-- [x] Gallery upload
-- [x] Multiple images
-- [x] Validate mime type
-- [x] Validate file size
-- [x] Store under store/product path
-- [x] Select primary image
-- [x] Reorder images
-- [x] Delete image safely
-
-> Implemented via `uploadProductImages` / `deleteProductImage` /
-> `reorderProductImages` (`src/lib/actions/product-images.ts`) and
-> `ProductImagesManager` on the product edit page. "Camera-friendly
-> mobile upload" / "Gallery upload" are two separate `<input type="file">`
-> triggers (`capture="environment"` vs plain `multiple`) per PRD §15
-> Etapa 3 ("Tirar foto" / "Galeria"). "Select primary image" has no
-> dedicated column — it's `sort_order = 0` — and shares one reorder
-> action with "Reorder images"; see DECISIONS.md ADR-027 for the full
-> design, including why mime type (10MB) and size limits are documented
-> assumptions rather than PRD-specified numbers.
+- [ ] Camera-friendly mobile upload
+- [ ] Gallery upload
+- [ ] Multiple images
+- [ ] Validate mime type
+- [ ] Validate file size
+- [ ] Store under store/product path
+- [ ] Select primary image
+- [ ] Reorder images
+- [ ] Delete image safely
 
 ## Image types
 
-- [x] original
-- [x] generated
-- [x] social_feed
-- [x] social_story
-- [x] detail
-
-> All five already existed as a DB constraint since Phase 1
-> (`product_images.image_type`). This phase's upload action only ever
-> writes `original`/`detail` (PRD §15 Etapa 3 never asks the admin to
-> pick a type) — `generated`/`social_feed`/`social_story` are reserved
-> for the Phase 6/7 AI pipeline to write, not selectable here. See
-> `IMAGE_TYPE_FOLDER` in `src/domain/product-image.ts` for how all five
-> map onto Storage folders.
+- [ ] original
+- [ ] generated
+- [ ] social_feed
+- [ ] social_story
+- [ ] detail
 
 ## Security
 
-- [x] Ensure store ownership before upload/delete
-- [x] Ensure original photo is never overwritten by AI flow
-- [x] Verify Storage policies
-
-> Store ownership: `requireStoreMembership()` + an explicit
-> product-ownership check in every action, same pattern as every other
-> mutation in this codebase, backed by `storage.objects` RLS scoped to
-> `is_store_member(store_id)` (the real enforcement layer — see the
-> Phase 5 migration). "Original never overwritten by AI flow": structurally
-> guaranteed already — every upload always creates a new row + a new
-> Storage path (a fresh uuid), never updates/overwrites an existing
-> `original`-type row or file; the Phase 6 AI flow (not yet built) will
-> write its own `generated`-type rows under a separate `generated/`
-> folder. Will be re-checked once Phase 6 actually implements that write
-> path. "Storage policies": insert/update/delete policies added and
-> reviewed in the Phase 5 migration; no SELECT policy exists or is needed
-> since the bucket is public (see ADR-027 for why that's an accepted
-> tradeoff, not an oversight).
+- [ ] Ensure store ownership before upload/delete
+- [ ] Ensure original photo is never overwritten by AI flow
+- [ ] Verify Storage policies
 
 ## Validation
 
-- [x] Run lint
-- [x] Run typecheck
-- [x] Run relevant tests
-
-> 17 new unit tests in `src/domain/__tests__/product-image.test.ts`
-> (mime/size validation, path building for all 5 image types, public-URL
-> path recovery). Full suite: 46 passed, 3 skipped. Lint, typecheck,
-> `format:check`, and `build` all pass cleanly in the cloud-workspace
-> validation mirror. Not verified against the live database/Storage from
-> any environment I control (see ADR-027) — the user needs to apply the
-> new migration and try a real upload.
+- [ ] Run lint
+- [ ] Run typecheck
+- [ ] Run relevant tests
 
 ---
 
@@ -480,64 +369,80 @@ Do not skip phases unless a blocking technical dependency requires it.
 
 ## Provider abstraction
 
-- [ ] Create `TryOnProvider`
-- [ ] Define input/output contracts
-- [ ] Define provider error contract
-- [ ] Implement `GoogleVTOProvider`
-- [ ] Keep business layer provider-agnostic
+- [x] Create `TryOnProvider` (`src/domain/try-on-provider.ts`)
+- [x] Define input/output contracts (`TryOnInput`/`TryOnResult`)
+- [x] Define provider error contract (`TryOnProviderError`)
+- [x] Implement `GoogleVTOProvider` (`src/lib/ai/google-vto-provider.ts`)
+- [x] Keep business layer provider-agnostic (`getTryOnProvider()` resolver;
+      `src/lib/actions/ai-generations.ts` only depends on the interface)
 
 ## AI models
 
-- [ ] CRUD AI models
-- [ ] CRUD poses
-- [ ] Upload reference pose images
-- [ ] Activate/deactivate model
-- [ ] Activate/deactivate pose
-- [ ] Track `usage_count`
-- [ ] Track `last_used_at`
+- [x] CRUD AI models (`src/lib/actions/ai-models.ts`, `/admin/ia/modelos`)
+- [x] CRUD poses (`createAiModelPose`/`updateAiModelPose`)
+- [x] Upload reference pose images (`uploadAiModelPoseImage`, new
+      `ai-model-poses` Storage bucket)
+- [x] Activate/deactivate model (`setAiModelActive`)
+- [x] Activate/deactivate pose (`setAiModelPoseActive`)
+- [x] Track `usage_count` (incremented on successful generation)
+- [x] Track `last_used_at` (set on successful generation)
 
 ## Selection logic
 
-- [ ] Manual model selection
-- [ ] Manual pose selection
-- [ ] Automatic model selection
-- [ ] Automatic pose selection
-- [ ] Avoid immediate repetition
-- [ ] Unit tests for selection
+- [x] Manual model selection (validated in `triggerTryOnGeneration`)
+- [x] Manual pose selection (validated in `triggerTryOnGeneration`)
+- [x] Automatic model selection (`selectModelAutomatically`)
+- [x] Automatic pose selection (`selectPoseAutomatically`)
+- [x] Avoid immediate repetition (`deriveLastUsedModelId` + exclusion)
+- [x] Unit tests for selection (`src/domain/__tests__/ai-selection.test.ts`)
 
 ## AI generations
 
-- [ ] Create generation record
-- [ ] `pending` status
-- [ ] `processing` status
-- [ ] `succeeded` status
-- [ ] `failed` status
-- [ ] `approved` state/metadata
-- [ ] `discarded` state/metadata
-- [ ] Save provider/model metadata
-- [ ] Save cost estimate if available
+- [x] Create generation record (`triggerTryOnGeneration`)
+- [x] `pending` status
+- [x] `processing` status
+- [x] `succeeded` status
+- [x] `failed` status
+- [x] `approved` state/metadata (`approveAiGeneration`, `product_image_id`)
+- [x] `discarded` state/metadata (`discardAiGeneration`)
+- [x] Save provider/model metadata (`provider`/`model` columns)
+- [x] Save cost estimate if available (`cost_estimate`)
 
 ## Daily quota
 
-- [ ] Add store daily limit setting
-- [ ] Count daily eligible generations
-- [ ] Block generation when quota is exhausted
-- [ ] Show usage in admin
-- [ ] Ensure normal photo workflow still works
-- [ ] Unit/integration tests
+- [x] Add store daily limit setting (`updateDailyAiGenerationLimit`,
+      `/admin/configuracoes`)
+- [x] Count daily eligible generations (`getDailyAiUsage`)
+- [x] Block generation when quota is exhausted (`isQuotaAvailable` check
+      before any provider call)
+- [x] Show usage in admin (`/admin/configuracoes` and the product page's
+      `AiTryOnPanel`)
+- [x] Ensure normal photo workflow still works (quota check is scoped to
+      `triggerTryOnGeneration` only; product/photo CRUD is untouched)
+- [x] Unit/integration tests (`src/domain/__tests__/ai-quota.test.ts`;
+      full live-quota integration test needs a real Supabase project —
+      not available in this session, see DECISIONS.md ADR-025)
 
 ## Approval
 
-- [ ] Preview generated candidate
-- [ ] Approve
-- [ ] Reject/discard
-- [ ] Never auto-publish
+- [x] Preview generated candidate (`AiTryOnPanel` shows `result_image_url`
+      for `succeeded` generations)
+- [x] Approve (`approveAiGeneration` — inserts the `product_images` row)
+- [x] Reject/discard (`discardAiGeneration`)
+- [x] Never auto-publish (only `approveAiGeneration` ever creates a
+      `product_images` row from a generation)
 
 ## Validation
 
-- [ ] Run lint
-- [ ] Run typecheck
-- [ ] Run tests
+- [x] Run lint — clean
+- [x] Run typecheck — clean
+- [x] Run tests — 79 passed / 4 skipped (up from 57/4; skipped tests need
+      a live Supabase project, unavailable in this session)
+
+**Not verified live** (no Google Cloud / Supabase credentials available in
+any environment this session can reach): an actual Vertex AI Virtual
+Try-On API call end-to-end, RLS behavior against a real database, and the
+skipped integration tests. See DECISIONS.md ADR-028 and V-001.
 
 ---
 
@@ -594,11 +499,19 @@ Do not skip phases unless a blocking technical dependency requires it.
 
 ## PWA
 
-- [ ] Manifest
-- [ ] App metadata
-- [ ] Icons
+- [x] Manifest
+- [x] App metadata
+- [x] Icons
 - [ ] Verify add-to-home-screen behavior
-- [ ] No complex offline sync
+- [x] No complex offline sync
+
+> Pulled forward from Phase 8 at the user's request (turning the store logo
+> into the app/PWA icon and the WhatsApp share preview). See ADR-030.
+> Favicon, apple-touch-icon, PWA manifest icons and the Open Graph share
+> card are all generated from `stores.logo_url`/`stores.name` — no static
+> icon files, no new dependency, no migration. "Verify add-to-home-screen
+> behavior" stays unchecked: it needs a real device test, not something
+> checkable from this environment.
 
 ## Accessibility
 

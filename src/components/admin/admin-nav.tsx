@@ -2,7 +2,16 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Package, Shield, Layers, Trophy, ExternalLink } from "lucide-react";
+import {
+  Home,
+  Package,
+  Shield,
+  Layers,
+  Trophy,
+  Sparkles,
+  Settings,
+  ExternalLink,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const NAV_ITEMS = [
@@ -11,14 +20,17 @@ const NAV_ITEMS = [
   { href: "/admin/times", label: "Times", icon: Shield, exact: false },
   { href: "/admin/colecoes", label: "Coleções", icon: Layers, exact: false },
   { href: "/admin/competicoes", label: "Competições", icon: Trophy, exact: false },
+  { href: "/admin/ia/modelos", label: "Modelos IA", icon: Sparkles, exact: false },
+  { href: "/admin/configuracoes", label: "Config.", icon: Settings, exact: false },
 ] as const;
 
 /**
  * Horizontal, scrollable, large-tap-target nav — mobile-first per
  * ADR-019 (avoid wide desktop-style admin chrome). Only links to sections
- * that exist today; Modelos IA / Artes / Configurações are added to this
- * list as each later phase actually builds them (TASKS.md Phase 2 does
- * not include those sections).
+ * that exist today; "Modelos IA" and "Config." were added in Phase 6 once
+ * those screens actually existed. "Artes" (a dedicated cross-product AI
+ * generations gallery) is still Phase 7+ scope — for now, generations are
+ * reviewed from each product's own edit page (`AiTryOnPanel`).
  */
 export function AdminNav() {
   const pathname = usePathname();

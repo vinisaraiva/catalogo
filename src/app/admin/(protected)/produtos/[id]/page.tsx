@@ -4,26 +4,47 @@ import { getProduct, listProductImages, listProductSizes } from "@/lib/queries/p
 import { listTeams } from "@/lib/queries/teams";
 import { listCollections } from "@/lib/queries/collections";
 import { listCompetitions } from "@/lib/queries/competitions";
+import { listActiveAiModelsWithPoses } from "@/lib/queries/ai-models";
+import { listGenerationsForProduct } from "@/lib/queries/ai-generations";
+import { getDailyAiUsage } from "@/lib/queries/ai-usage";
 import { ProductEditForm } from "@/components/admin/product-edit-form";
 import { ProductStatusActions } from "@/components/admin/product-status-actions";
 import { ProductSizesManager } from "@/components/admin/product-sizes-manager";
 import { ProductImagesManager } from "@/components/admin/product-images-manager";
+import { AiTryOnPanel } from "@/components/admin/ai-try-on-panel";
 import { Separator } from "@/components/ui/separator";
 
 export default async function EditProductPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const { store } = await requireStoreMembership();
 
-  const [product, sizes, images, teams, collections, competitions] = await Promise.all([
+  const [
+    product,
+    sizes,
+    images,
+    teams,
+    collections,
+    competitions,
+    aiLibrary,
+    generations,
+    aiUsage,
+  ] = await Promise.all([
     getProduct(store.id, id),
     listProductSizes(store.id, id),
     listProductImages(store.id, id),
     listTeams(store.id),
     listCollections(store.id),
     listCompetitions(store.id),
+    listActiveAiModelsWithPoses(store.id),
+    listGenerationsForProduct(store.id, id),
+    getDailyAiUsage(store.id),
   ]);
 
   if (!product) notFound();
+
+  const hasOriginalPhoto = images.some(
+    (image) => image.image_type === "original" || image.image_type === "detail",
+  );
 
   return (
     <div className="space-y-6">
@@ -36,6 +57,21 @@ export default async function EditProductPage({ params }: { params: Promise<{ id
       <div className="space-y-2">
         <h2 className="text-sm font-semibold">Fotos</h2>
         <ProductImagesManager productId={product.id} initialImages={images} />
+      </div>
+
+      <Separator />
+
+      <div className="space-y-2">
+        <h2 className="text-sm font-semibold">Gerar arte com IA</h2>
+        <AiTryOnPanel
+          productId={product.id}
+          hasOriginalPhoto={hasOriginalPhoto}
+          initialGenerations={generations}
+          activeModels={aiLibrary.models}
+          activePoses={aiLibrary.poses}
+          usageLimit={aiUsage.limit}
+          usageToday={aiUsage.usedToday}
+        />
       </div>
 
       <Separator />

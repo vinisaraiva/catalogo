@@ -1,8 +1,29 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { getStorefrontStore } from "@/lib/store/get-storefront-store";
 import { SearchBar } from "@/components/storefront/search-bar";
 import { SelectionProvider } from "@/components/storefront/selection-provider";
 import { SelectionBar } from "@/components/storefront/selection-bar";
+
+/**
+ * Store-branded title/description/Open Graph for every storefront route,
+ * overriding the generic "Catálogo" default from the root layout
+ * (`src/app/layout.tsx`). This is what a WhatsApp/iMessage/Telegram link
+ * preview reads when a customer shares the catalog link — the preview
+ * *image* comes from `opengraph-image.tsx` in this same route group,
+ * which Next.js merges in automatically without needing an `images` entry
+ * here.
+ */
+export async function generateMetadata(): Promise<Metadata> {
+  const store = await getStorefrontStore();
+  const description = `Catálogo de camisas — ${store.name}`;
+
+  return {
+    title: { default: store.name, template: `%s · ${store.name}` },
+    description,
+    openGraph: { title: store.name, description, type: "website" },
+  };
+}
 
 /**
  * Shell for every public storefront route (PRD §17 "identidade da loja").

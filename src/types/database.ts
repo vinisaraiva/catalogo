@@ -421,6 +421,12 @@ export interface Database {
           generation_type: AiGenerationType;
           status: AiGenerationStatus;
           cost_estimate: number | null;
+          // Added by 20260825000004_ai_generation_fields.sql — see that
+          // migration's header comment for why these aren't in PRD.md §11's
+          // original field list.
+          result_image_url: string | null;
+          product_image_id: string | null;
+          error_message: string | null;
           created_at: string;
         };
         Insert: {
@@ -433,6 +439,9 @@ export interface Database {
           generation_type?: AiGenerationType;
           status?: AiGenerationStatus;
           cost_estimate?: number | null;
+          result_image_url?: string | null;
+          product_image_id?: string | null;
+          error_message?: string | null;
           created_at?: string;
         };
         Update: Partial<Database["public"]["Tables"]["ai_generations"]["Insert"]>;
@@ -449,6 +458,13 @@ export interface Database {
             columns: ["product_id"];
             isOneToOne: false;
             referencedRelation: "products";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "ai_generations_product_image_id_fkey";
+            columns: ["product_image_id"];
+            isOneToOne: false;
+            referencedRelation: "product_images";
             referencedColumns: ["id"];
           },
         ];

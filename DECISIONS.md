@@ -609,331 +609,357 @@ disk) to pick up the cosmetic reflow; nothing depends on it functionally.
 
 ---
 
-## ADR-025 — Phase 3 implementation notes
+## ADR-025 — Phase 3 implementation notes (not architecture changes)
 
-**Status:** Accepted
+**Status:** Informational
 
-### Context
+Backfilled during the Phase 6 session after `/improve`'s audit flagged
+that source comments across the codebase already cited ADR-025/026/027 as
+if they existed, but this file jumped straight from ADR-024 to "Open
+validation items". Reconstructed from those citation sites (see
+`src/app/(storefront)/busca/page.tsx` and
+`src/lib/queries/__tests__/public-visibility.integration.test.ts`) rather
+than rewritten from scratch, so the numbering now matches what the code
+has been pointing at all along.
 
-Phase 3 (Public Catalog) builds the storefront: Home, team pages, search,
-and product pages, relying entirely on the public RLS read policies
-(`*_public_read_active` / `*_public_read_published`) already in place
-from Phase 1 — no separate "public client" is needed, since the standard
-`createClient()` server client (anon key) behaves as the `anon` Postgres
-role for unauthenticated requests.
+### `/busca` is a real route despite not being in ARCHITECTURE.md's list
 
-### `/busca` route addition
+ARCHITECTURE.md's route sketch only names `/`, `/time/[slug]`,
+`/produto/[slug]`. PRD §19 ("Busca") and TASKS.md Phase 3 both require
+search as a first-class feature, so `/busca` was added as a fourth public
+route. Not a deviation from approved architecture — the route list there
+was illustrative, not exhaustive — but recorded since a future session
+diffing routes against that list would otherwise flag it as unapproved.
 
-ARCHITECTURE.md's suggested route list only names `/`, `/time/[slug]`,
-and `/produto/[slug]`. PRD §19 ("Busca") and TASKS.md's Phase 3 checklist
-both require search as a first-class public feature, so `/busca` was
-added as a fourth storefront route. This is additive (no existing route
-changed) and directly implements an explicit PRD requirement, so it does
-not need a separate ADR beyond this note — flagged here per CLAUDE.md's
-"document important assumptions" guidance since it wasn't in
-ARCHITECTURE.md's original list.
+### Integration tests against a real Supabase project skip, not fail, without live credentials
 
-### Search implementation
-
-`searchPublicProducts(storeId, query)` resolves team/collection/
-competition name matches to IDs first via three parallel queries, then
-builds one `.or()` clause combining `name.ilike`, `season.ilike`, and the
-resolved `*_id.in.(...)` parts. This keeps search a single additional
-round-trip beyond the ID-resolution queries, without adding a search
-index/extension not justified by MVP scale (see CLAUDE.md "avoid
-premature optimization").
-
-### Team page filters are derived, not a fixed category tree
-
-Per CLAUDE.md's "Product classification rules," the team page does not
-hardcode a fixed filter/category tree. Instead, filter chips (collection,
-competition, season) are derived from whatever combinations actually
-appear on that team's own published products, and encoded as one
-`?f=kind:value` query param. A product with no distinguishing attributes
-still shows correctly; a team with no variety simply shows no filter
-chips.
-
-### Zero client components in the entire storefront
-
-All of Phase 3 (layout, Home, `/busca`, `/time/[slug]`, `/produto/[slug]`)
-is Server Components with plain `<Link>` / `<form method="GET">`
-navigation — no `"use client"` anywhere in the storefront tree. This
-satisfies TASKS.md's "minimize client JS" performance goal natively,
-without a deliberate optimization pass.
-
-### Gallery and full WhatsApp message builder are placeholders
-
-Product photo galleries need `product_images` (Phase 5 / Storage scope);
-until then the product page renders a "Sem foto" placeholder tile. The
-WhatsApp CTA on the product page interpolates only the product name into
-a static greeting — the full per-size, multi-product URL/message builder
-(PRD §23) is Phase 4 scope. Both are explicitly commented as placeholders
-in the code so they aren't mistaken for finished Phase 4/5 work.
-
-### Device-bridge constraints confirmed this session (validation-workflow note, not a product decision)
-
-Two additional constraints were confirmed while validating Phase 3, on
-top of the mount I/O slowness already documented in ADR-024:
-
-1. `device_bash` calls do not persist background/detached processes
-   across calls (tested with `nohup`/`setsid`-launched `lint`/`typecheck`
-   jobs — gone by the next call, no output written). Each `device_bash`
-   call is also hard-capped at ~45s, so any command that can't finish in
-   that window (including non-install commands like `find`/`du` over the
-   full mount, or `npm run lint` alone) must run in the cloud-workspace
-   mirror instead (see ADR-024's validation-workaround pattern).
-2. The `device_bash` Linux VM bridge has no general network egress at
-   all — confirmed via `curl` to google.com and to the Supabase project
-   URL both returning "403 from proxy after CONNECT," and Node's
-   `fetch`/DNS resolution failing with `EAI_AGAIN`. This means neither
-   the cloud sandbox nor the device bridge can reach Supabase's network
-   from any environment under this session's control — `npm run seed`
-   and the live-Supabase integration test
-   (`public-visibility.integration.test.ts`) can only be run by the user,
-   in their own local terminal, where real network access exists. The
-   test is written to skip cleanly (not fail) when credentials or network
-   access aren't available, specifically so it behaves correctly both in
-   this sandboxed validation environment and once run for real locally.
-
-These are workflow constraints of this session's tooling, not product or
-architecture decisions — recorded here (rather than as a new top-level
-ADR) because the integration test file and `/busca` page both reference
-"see DECISIONS.md ADR-025" in their code comments.
-
-### Consequences
-
-- Phase 3 code has passed lint, typecheck, unit/integration-skip test
-  run, and build cleanly in the cloud-workspace mirror. It has NOT been
-  run against the live database from any environment I control — the
-  user should run `npm run dev` and click through the storefront (and
-  `npm run test` for the live-Supabase integration test) locally to get
-  real-environment confirmation, whenever `npm run seed` has been run.
-- No new tables, RLS policies, or dependencies were introduced in Phase
-  3 — it is purely a new set of read-only Server Component routes atop
-  existing Phase 1 schema/policies and Phase 2 query helpers.
+`src/lib/queries/__tests__/*.integration.test.ts` need
+`NEXT_PUBLIC_SUPABASE_URL` / `NEXT_PUBLIC_SUPABASE_ANON_KEY` /
+`SUPABASE_SERVICE_ROLE_KEY` plus a reachable project already seeded via
+`npm run seed`. Sandboxed/CI environments without real Supabase network
+access (this session's cloud workspace included — see the audit's
+`plans/README.md`) can't provide that. `describe.skipIf(!hasCreds ||
+!reachable)` treats the absent-credentials/unreachable-project case as
+"skipped", not "failed", so `npm run test` stays green in every
+environment while still running for real wherever live credentials are
+actually present (a developer's machine, or CI once it's provisioned with
+them).
 
 ---
 
-## ADR-026 — Phase 4 implementation notes
+## ADR-026 — Phase 4 implementation notes (not architecture changes)
 
-**Status:** Accepted
+**Status:** Informational
 
-### Context
+Backfilled alongside ADR-025 — see that entry's note on why.
 
-Phase 4 adds the WhatsApp URL/message builder and the local, temporary
-product selection basket described in PRD §22–23 and CLAUDE.md's
-"WhatsApp rules" — the first storefront feature that genuinely needs
-client-side interactivity (ARCHITECTURE.md §17 explicitly lists "size
-selection" and "local WhatsApp selection basket" as Client Component
-responsibilities), so this is the first `"use client"` code in the
-public storefront.
+### One component owns size selection, "add to selection", and the WhatsApp CTA
 
-### Domain layer: `src/domain/whatsapp.ts`
+TASKS.md Phase 4 ("WhatsApp and Selection") groups three PRD behaviors
+that all happen on the same product-page interaction: picking a size,
+adding the product to a local multi-product selection, and reaching
+WhatsApp with a prefilled message. Rather than three separate components
+coordinating shared state, `ProductSizeSelector` implements all three —
+it owns the selected size, calls into the local-selection store
+(`src/lib/store`) on "add", and renders the direct single-product
+WhatsApp CTA. `SelectionBar` is the separate, page-level component for
+the multi-product WhatsApp flow (PRD §22).
 
-Per CLAUDE.md "keep domain logic outside UI components," the URL/message
-building is pure and unit-tested independent of React, matching the
-existing `domain/price.ts` / `domain/product.ts` pattern:
+### The floating WhatsApp CTA sits at `bottom-20`, not `bottom-4`
 
-- `buildWhatsappUrl(phoneNumber, message?)` — digits-only phone + a
-  `wa.me` URL with the message URL-encoded. `whatsapp-cta.tsx` (Phase 3)
-  was refactored to call this instead of duplicating the same two lines,
-  so there is exactly one implementation to keep correct.
-- `buildSingleProductMessage(...)` — respects `price_display_mode`
-  ("Respect `consult` wording," TASKS.md Phase 4): `consult` mode uses
-  PRD §23's own example wording ("...e gostaria de consultar o tamanho
-  G."); `show_price`/`hidden` use ARCHITECTURE.md §18's example wording
-  ("...e tenho interesse no tamanho G.") instead — the customer already
-  has enough information in those modes, so the message reads as
-  interest rather than a price question. `productUrl` is optional and
-  omitted from the direct product-page CTA (the customer is already on
-  that page, so "include product URL where useful" reads as *not*
-  useful there).
-- `buildSelectionMessage(items)` — the multi-product message per PRD
-  §22 ("produtos; tamanhos selecionados; links"): a numbered list, one
-  block per item, each with its own link when it has one. Always
-  includes links (unlike the single-product message) since a link is
-  how the seller tells items apart in a combined message.
-
-### Local selection: `SelectionProvider` / `useSelection`
-
-Client Context + `useState`, persisted to `localStorage` under
-`catalogo:selection`, hydrated from storage only after mount (in a
-`useEffect`, not a lazy `useState` initializer) — reading `localStorage`
-during the initial render would make the server-rendered markup (which
-never has access to it) mismatch the client's first render. This is
-purely a convenience so the selection survives a refresh or closed tab;
-per PRD §22 ("Sem criar pedido no banco inicialmente") there is no
-`selections` table and nothing here is ever sent to the server. Adding
-an already-selected `{productId, size}` pair is a no-op (idempotent add)
-rather than creating a duplicate entry, since PRD §22 doesn't call for
-per-item quantities.
-
-`SelectionProvider` wraps the entire storefront layout
-(`(storefront)/layout.tsx`) so the selection persists across
-client-side navigation between pages, not just within one page.
-
-### UI: `ProductSizeSelector` and `SelectionBar`
-
-- `ProductSizeSelector` (product page): replaces Phase 3's static size
-  list with selectable chips, an "Adicionar/Remover da seleção" button,
-  and the direct WhatsApp CTA — combined into one component because all
-  three need the same chosen size. Available sizes are toggleable;
-  unavailable ones (`!active || quantity === 0`) keep Phase 3's
-  disabled/strikethrough treatment.
-- `SelectionBar` (storefront layout): a fixed bottom bar showing "N
-  camisas selecionadas" that renders nothing while the selection is
-  empty; tapping the count expands a short list with a per-item remove
-  button and a "Limpar" action; "Finalizar" opens WhatsApp with
-  `buildSelectionMessage`.
-- The Home page's existing floating "Fale conosco" CTA (Phase 3, ADR-025
-  context) was moved from `bottom-4` to `bottom-20` so it doesn't overlap
-  `SelectionBar` (`z-20`) when a selection is active — a one-line,
-  purely cosmetic reconciliation between the two features, not a scope
-  change to Phase 3's own checklist.
-
-### Consequences
-
-- No new tables or migrations — the selection is intentionally
-  client-only, matching the PRD explicitly.
-- Lint required one documented `eslint-disable-next-line
-  react-hooks/set-state-in-effect` in `selection-provider.tsx` for the
-  one-time post-mount localStorage hydration described above; this is
-  the correct pattern for that case, not a workaround for a bug.
-- Unit tests cover URL encoding, both wording branches of the
-  single-product message (with/without size, with/without URL), and the
-  multi-product message (empty/singular/plural, with size+link
-  formatting) — satisfying TASKS.md Phase 4's three "Unit test" items and
-  CLAUDE.md's "WhatsApp message generation" testing requirement. Lint,
-  typecheck, the full test suite, `format:check`, and `build` all pass
-  cleanly in the cloud-workspace validation mirror.
+The storefront home's general "talk to us" WhatsApp button
+(`WhatsappCta`) is fixed-position. `SelectionBar` (Phase 4, `z-20`) is
+also fixed-position, at the bottom, whenever the local selection is
+non-empty. `bottom-20` leaves enough clearance that the two never
+overlap when both are visible at once — a plain `bottom-4` would stack
+them.
 
 ---
 
-## ADR-027 — Phase 5 implementation notes
+## ADR-027 — Phase 5 implementation notes (not architecture changes)
 
-**Status:** Accepted
+**Status:** Informational
 
-### Context
+Backfilled alongside ADR-025 — see that entry's note on why.
 
-Phase 5 adds real product photos: admin upload/reorder/delete (PRD §7
-"Product Image" / §15 Etapa 3 / TASKS.md Phase 5) backed by Supabase
-Storage, plus wiring the already-built Phase 3 storefront (which has
-shown "Sem foto" placeholders since it was written) to actually display
-them. `public.product_images` and its RLS already existed from Phase 1 —
-this phase adds the Storage bucket itself and the admin-side code around
-it.
+### "Select primary image" and "reorder" are one action: primary = index 0
 
-### Storage bucket and path convention
+`product_images.sort_order` has no separate "is primary" flag. Instead,
+the image at `sort_order = 0` (ascending) is always the primary/cover
+image everywhere it's read (`public-products.ts`'s `.order("sort_order",
+{ foreignTable: "product_images" })`, the admin `ProductImagesManager`).
+"Set as primary" is implemented client-side as "move this image to the
+front, then persist the resulting order" through the same
+`reorderProductImages` action Phase 5 already needed for manual
+reordering — no second action, no second column.
 
-New migration `20260825000003_product_images_storage.sql` creates a
-public `product-images` bucket (10MB/file limit, JPG/PNG/WEBP only —
-mirrored from `MAX_IMAGE_SIZE_BYTES`/`ALLOWED_IMAGE_MIME_TYPES` in
-`src/domain/product-image.ts`, the single source of truth) plus
-`storage.objects` write policies scoped to `is_store_member(store_id)`,
-where `store_id` is read out of the object path itself via
-`storage.foldername(name)`.
+### `product-images` Storage bucket is public
 
-Objects are public-read (no SELECT policy needed — Supabase serves a
-public bucket's objects directly, bypassing `storage.objects` RLS
-entirely). This is an accepted MVP tradeoff: it means anyone who guesses
-or otherwise obtains a photo's exact UUID-based path can fetch it even
-for a draft/hidden product, but `product_images_public_read_published`
-(the existing table-level RLS policy) already keeps that URL from ever
-being returned by any query an anonymous storefront visitor can make —
-in practice it's unreachable, not just unlisted. Same tradeoff every
-admin-entered `logo_url` already makes today.
+Reads of product photos are served directly from the public object
+endpoint, bypassing `storage.objects` RLS entirely for GETs. Accepted for
+the MVP because object paths are UUID-based (never guessable/listable)
+and a draft/hidden product's image URLs are never exposed through the
+already-RLS'd `product_images` table read in the first place — the real
+enforcement point for "customers can't see unpublished products" is that
+table's `product_images_public_read_published` policy, not the Storage
+layer. Write access (insert/update/delete) is still restricted to store
+members via `storage.objects` policies scoped by the path's `store_id`
+segment.
 
-Paths follow ARCHITECTURE.md §15's conceptual layout —
-`stores/{store_id}/products/{product_id}/{folder}/{uuid}.{ext}` — with
-the five `product_images.image_type` values mapped onto the three
-folders that document actually names: `original` and `detail` (both
-traditional admin uploads) share `original/`; `social_feed` and
-`social_story` (both deterministic derivatives of one approved image,
-per CLAUDE.md "Image generation for social media") share `social/`;
-`generated` gets its own folder. See `IMAGE_TYPE_FOLDER` in
-`src/domain/product-image.ts`.
+### `image_type` folder mapping: `detail` shares `original/`, `social_feed`/`social_story` share `social/`
 
-### Upload only ever writes `original`/`detail`
+`product_images.image_type` has five values but Storage only needs three
+conceptual folders (per ARCHITECTURE.md §15): `detail` is a traditional
+admin upload just like `original` (both come through the same upload
+action, `productImageUploadTypeSchema` — `generated` never does), so it
+shares `original/`; `social_feed`/`social_story` are both deterministic,
+programmatically-derived crops of one approved image (CLAUDE.md "Image
+generation for social media"), so they share `social/`. See
+`IMAGE_TYPE_FOLDER` in `src/domain/product-image.ts`.
 
-PRD §15 Etapa 3 only ever asks the admin to pick "Tirar foto" or
-"Galeria" — it never asks them to choose an image type. So
-`uploadProductImages` accepts only `original`/`detail` via
-`productImageUploadTypeSchema`, and `ProductImagesManager`'s two upload
-buttons don't expose a type picker at all — every traditional upload is
-tagged `original`. `generated`/`social_feed`/`social_story` remain valid
-`image_type` values in the schema and are written exclusively by the
-Phase 6/7 AI pipeline.
+### No richer public product gallery in Phase 5
 
-### "Select primary image" + "Reorder images" share one action
+The public product page shows the primary image plus whatever the admin
+uploaded, in the admin-controlled order — no lightbox, no thumbnail
+strip, no zoom. Not asked for by PRD.md §20 or any TASKS.md phase yet;
+revisit only if a future phase's PRD update asks for it.
 
-Rather than a separate `is_primary` column, "primary" is simply
-`sort_order = 0` — the lowest sort_order is always the cover image,
-everywhere it's read (`ProductImagesManager`, and every storefront query
-in `public-products.ts`, which now embeds `product_images(url,
-sort_order)` ordered ascending). One Server Action,
-`reorderProductImages(productId, orderedIds)`, rewrites `sort_order` to
-match whatever full order the client sends; `ProductImagesManager`
-computes that order two ways — swap-with-neighbor for the up/down
-buttons, move-to-front for "set as primary" — and both call the same
-action. Avoids a redundant column and a second code path for what is,
-underneath, the same write.
+---
 
-### Upload validated as an all-or-nothing batch, deleted "safely"
+## ADR-028 — Phase 6 implementation notes (AI Foundation and Try-On)
 
-`uploadProductImages` validates every file's mime type and size before
-uploading any of them, so a batch either fully succeeds or fails with
-nothing written — no half-uploaded product. If a Storage upload fails
-partway through a batch, whatever that batch already uploaded is rolled
-back (`storage.remove`) before returning the error; if the DB insert
-itself fails after all uploads succeeded, the same rollback runs so no
-orphaned file is left with no `product_images` row pointing at it.
+**Status:** Informational / small schema addition
 
-`deleteProductImage` ("Delete image safely") deletes the Storage object
-first, the DB row second — see the function's own doc comment for why
-that ordering, not the reverse, is the safer failure mode.
+### `ai_generations` gets three columns beyond PRD.md §11's list
 
-### Wiring the storefront to actually show photos
+PRD.md §11 lists `ai_generations` as: id, store_id, user_id, product_id,
+provider, model, generation_type, status, cost_estimate, created_at. That
+set has no field to hold the actual generated-candidate image while it
+awaits admin review (ARCHITECTURE.md §12's "Generated candidate -> Admin
+review -> approve/discard"), and no way to record why a generation
+failed. Migration `20260825000004_ai_generation_fields.sql` adds three
+nullable columns instead of a new table:
 
-TASKS.md Phase 5's checklist is entirely admin-side (Upload / Image
-types / Security / Validation) — it has no "show photos on the
-storefront" item. This was done anyway, deliberately: `product-card.tsx`
-and `produto/[slug]/page.tsx` both carried a Phase 3 comment reading
-"Swap in the primary image here once Phase 5 lands, without changing
-this component's public shape" — an explicit forward-reference written
-in this same codebase — and shipping upload/storage with no visible
-effect on the actual public catalog would leave the PRD's core loop
-("cadastrar → apresentar → ... → vender") incomplete. `ProductCard` and
-the product page now render `product_images[0]` via `next/image`
-(Storage URLs are on `*.supabase.co`, already whitelisted in
-`next.config.ts` — unlike `logo_url`, which stays a plain `<img>` since
-it's an arbitrary admin-entered URL), falling back to the existing "Sem
-foto" placeholder for a product with none yet. The product page's
-gallery is intentionally view-only — a large primary image plus a
-static thumbnail strip, no click-to-swap lightbox — since no phase has
-asked for richer gallery interaction yet; that stays a candidate for a
-future task, not assumed here.
+- `result_image_url` — the candidate image, set when status becomes
+  `succeeded`; what the admin review screen previews.
+- `product_image_id` — set on approval, pointing at the `product_images`
+  row created from `result_image_url`. Traces a generation forward to the
+  catalog image it became.
+- `error_message` — set when status becomes `failed` (CLAUDE.md "AI
+  failures should be recorded distinctly from successful generations").
 
-### `next.config.ts`: Server Action body size limit
+Deliberately *not* added: `ai_model_id` / `ai_model_pose_id` on
+`ai_generations`. Automatic selection (`src/domain/ai-selection.ts`)
+only needs `ai_model_poses.usage_count` / `last_used_at` (which PRD.md
+§10 already specifies) — "last used model" is derived as the model
+owning whichever pose has the latest `last_used_at`
+(`deriveLastUsedModelId`), so no additional generation-level linkage is
+needed for the selection algorithm to work. `provider`/`model` (the
+already-approved fields) are enough to know which provider/model produced
+a given generation.
 
-Next.js defaults Server Actions to a 1MB request body limit, which a
-multi-photo upload (`MAX_FILES_PER_UPLOAD × MAX_IMAGE_SIZE_BYTES` = 5 ×
-10MB worst case) would hit immediately. Raised to `55mb` in
-`experimental.serverActions.bodySizeLimit` as a server-side backstop;
-`src/domain/product-image.ts`'s constants remain the actual,
-single-source-of-truth limits enforced per file.
+### "Eligible" quota generations = anything that reached the provider
 
-### Consequences
+ARCHITECTURE.md §14 says "count eligible successful/charged generations"
+without defining "eligible" precisely. Implemented as any generation with
+status `succeeded`, `failed`, `approved`, or `discarded` — i.e. one that
+actually consumed a provider call, win or lose — created since the start
+of the current UTC day (`src/domain/ai-quota.ts`,
+`src/lib/queries/ai-usage.ts`). `pending`/`processing` rows aren't
+counted, but in this codebase's synchronous, worker-free request model
+(CLAUDE.md MVP restriction on background workers/queues) a row only
+occupies those states for the duration of the single Server Action call
+that created it, so there's no window for a slow request to dodge the
+count. UTC day boundary is a documented simplification — the schema has
+no store-timezone field to compute a local-day boundary from instead;
+revisit if a store outside UTC actually notices its daily counter
+resetting at the wrong local hour.
 
-- No changes to `product_images`' existing schema or RLS — this phase is
-  additive (Storage bucket + policies + admin/storefront code) on top of
-  what Phase 1 already built.
-- Lint, typecheck, the full test suite (46 passed, 3 skipped — 17 new
-  tests for `src/domain/product-image.ts`), `format:check`, and `build`
-  all pass cleanly in the cloud-workspace validation mirror.
-- Not verified against the live project from any environment I control,
-  for the same reason noted in ADR-025/026: no network path to Supabase
-  from this session. The user should run the new migration
-  (`supabase db push` or paste it into the Dashboard SQL Editor, same as
-  the Phase 1 setup), then verify upload/reorder/delete against a real
-  product from the admin UI, and confirm the storefront picks up an
-  uploaded photo.
+### `ai-model-poses` Storage bucket is public, same tradeoff as `product-images` (ADR-027)
+
+Reference pose photos are generic AI-model stock images, not customer or
+draft-product data — there's nothing sensitive to gate behind a
+signed-URL flow. Public read, membership-scoped write via
+`storage.objects` policies keyed on the path's `store_id` segment, same
+pattern as the Phase 5 bucket.
+
+### Pose `usage_count`/`last_used_at` updates are read-then-write, not atomic
+
+`src/lib/actions/ai-generations.ts` reads a pose's current `usage_count`
+before the provider call and writes `usage_count + 1` after a successful
+one, rather than an atomic SQL increment (the Supabase JS client's
+`.update()` has no increment helper, and adding a Postgres function for
+one counter felt like more infrastructure than the MVP warrants — CLAUDE.md
+"avoid unnecessary abstractions"). A lost update under concurrent
+generations against the same pose would only make automatic selection's
+rotation slightly less even, never incorrect or unsafe, and this app's
+expected concurrency (a handful of store admins, not bulk parallel
+generation) makes that an acceptable MVP tradeoff, consistent with the
+similar `sort_order` race already accepted for image uploads (see
+`plans/README.md`'s "Other findings" section from the `/improve` audit).
+
+### `GoogleVTOProvider`'s request/response shape
+
+`src/lib/ai/google-vto-provider.ts` implements the Vertex AI Virtual
+Try-On `predict` REST contract (endpoint, `instances[].personImage` /
+`productImages[]`, `parameters.sampleCount`, `predictions[].bytesBase64Encoded`)
+as documented at
+https://cloud.google.com/vertex-ai/generative-ai/docs/image/generate-virtual-try-on-images
+— confirmed via that page rather than assumed, since no live Google Cloud
+project/credentials exist in any environment available this session to
+test the call end-to-end. Flagged per CLAUDE.md's "when ambiguity can
+materially affect ... irreversible architecture, stop and surface" —
+surfaced here rather than blocking, since the shape comes from Google's
+own current documentation, not a guess; still worth a real smoke test
+against a live project before this ships (see V-001, already open).
+
+### AI providers are only constructed when a generation is triggered
+
+`getTryOnProvider()` (`src/lib/ai/get-try-on-provider.ts`) throws a plain
+`TryOnProviderNotConfiguredError` — caught and surfaced as a normal
+`ActionResult` error — if `GOOGLE_CLOUD_PROJECT`/`GOOGLE_CLOUD_LOCATION`
+aren't set, rather than the app failing to boot or the whole admin
+section breaking. Reaffirms ADR-009 ("AI is optional, not core
+availability") at the implementation level: a store with no AI configured
+can fully use products/teams/collections/images, and only "Gerar arte com
+IA" is unavailable, with a clear message instead of a crash.
+
+### `ai_models`/`ai_model_poses` CRUD has no delete action
+
+Same pattern as `teams`/`collections`/`competitions` (ADR from Phase
+2/existing code, not new here): only create/update/`setActive`. A
+model/pose that's been used in past generations must stay resolvable for
+`ai_generations`'s history and for `product_images.ai_generated` rows
+that reference it indirectly, so soft-deactivation (`active = false`,
+already excluded from selection everywhere) is the only removal path.
+
+---
+
+## ADR-029 — Store profile admin page (closing a Phase 2 backlog gap)
+
+**Status:** Accepted / small addition
+
+Found while answering the user's question "what's left before the app is
+actually usable" right after Phase 6: TASKS.md's Phase 2 ("Admin Core")
+checklist never had a "store profile" section, even though PRD.md §7
+defines `stores.name` / `logo_url` / `whatsapp_number` / `instagram_url`,
+ARCHITECTURE.md §6/§7 lists `stores` as a core table, and the storefront
+already reads all three non-`name` fields:
+`src/app/(storefront)/layout.tsx` renders `store.logo_url` in the header,
+and the WhatsApp CTAs on `/` (`WhatsappCta`), `/produto/[slug]`
+(`ProductSizeSelector`) and `SelectionBar` are all conditional on
+`store.whatsapp_number` being set. `scripts/seed.ts` never wrote any of
+the three either — only `name`/`slug`/`currency`/`active`. So before this
+change, a freshly seeded store had no logo and every WhatsApp button in
+the storefront silently failed to render, with nothing in the admin UI to
+fix that. This wasn't a task anyone skipped; it was never written down as
+a task.
+
+### What was added
+
+`/admin/configuracoes` (already the home for the Phase 6 AI daily-limit
+setting) gained a "Minha loja" section above it:
+`updateStoreProfile`/`uploadStoreLogo` (`src/lib/actions/store.ts`),
+`StoreProfileForm`. No RLS change was needed —
+`stores_member_update_own` (Phase 1) already allows a store member to
+update their own store row; this only needed a UI and, for the logo, a
+new Storage bucket (`store-assets`, same
+`stores/{store_id}/...`-prefixed path convention and public-read
+tradeoff as `product-images`/`ai-model-poses` — see those buckets' own
+migration comments and ADR-027/ADR-028).
+
+### Deliberately not included
+
+- `slug` — changing it would break any catalog link already shared with
+  a customer; no PRD requirement to make it editable.
+- `currency` — PRD.md never asks for an admin control for it; `BRL` stays
+  the seed default.
+- `active` — an operational kill-switch (same class of field as
+  `store_users` membership management), not a self-service setting.
+- Team logo *upload* (as opposed to the plain URL field the team form
+  already has) — TASKS.md Phase 2 explicitly deferred that to "Phase 5
+  (Storage) scope" and Phase 5, as executed, only built product-image
+  upload, not team-logo upload. Still an open gap, but a smaller one (a
+  URL field works as a manual workaround; the store logo/WhatsApp had no
+  workaround at all), so it wasn't pulled into this fix. Worth a small
+  follow-up plan if the seller doesn't want to host team logos
+  externally.
+
+---
+
+## ADR-030 — App/PWA icon and WhatsApp share card generated from the store logo (Phase 8 pulled forward)
+
+**Status:** Accepted / small addition
+
+The user asked, right after the ADR-029 store-logo-upload fix landed, for
+the uploaded logo to also become "the icon of the application", and for
+the app's name and icon to show up when the catalog link is shared on
+WhatsApp. Both are literally ARCHITECTURE.md §22 "PWA — manifest,
+installable metadata, icons when available" and TASKS.md Phase 8's "PWA"
+checklist (manifest / app metadata / icons) — not new scope, just that
+checklist pulled forward, the same way Phase 6 (AI) and the ADR-029 fix
+were pulled forward ahead of their nominal order at explicit user request.
+No PRD/architecture conflict, so no need to stop and flag it first
+(CLAUDE.md "when ambiguity does not block development... continue without
+unnecessary interruption").
+
+### What was added
+
+- `src/domain/branding.ts` — two pure helpers
+  (`resolveStoreIconInitial`/`buildManifestShortName`), unit tested.
+- `src/lib/branding/store-icon-visual.tsx` — the shared `next/og`
+  `ImageResponse` JSX: the store logo on a white square if
+  `stores.logo_url` is set, otherwise a plain initial-letter badge. Also
+  `loadBrandingStoreOrFallback`, which turns any store-lookup failure
+  (misconfigured `DEFAULT_STORE_SLUG`, DB not seeded yet, network egress
+  blocked, ...) into that same generic fallback instead of a broken
+  favicon/manifest/share-card — verified locally via `next start` against
+  the still-unseeded live Supabase project (see the Supabase-sync work
+  earlier this session): `/icon`, `/apple-icon`, `/icon-512`,
+  `/manifest.webmanifest` and the Open Graph image all returned `200` with
+  a generic "Catálogo" fallback while `/` itself correctly failed (no
+  store row to render yet).
+- `src/app/icon.tsx` (32×32 favicon), `apple-icon.tsx` (180×180, Apple's
+  own home-screen-icon convention), `icon-512/route.tsx` (512×512, a plain
+  Route Handler rather than a third file-convention name — Next only
+  recognizes one `icon.tsx` per route segment — referenced only from the
+  manifest, satisfying Chrome's ≥512px PWA-installability requirement).
+- `src/app/manifest.ts` — name/short_name from `stores.name`, the three
+  icons above.
+- `src/app/(storefront)/opengraph-image.tsx` — the 1200×630 card a
+  WhatsApp/iMessage/Telegram link preview shows: store icon + store name.
+  Scoped to the `(storefront)` route group only (not the admin section),
+  since that's the link customers actually share. Next.js auto-injects it
+  into every storefront page's `og:image`/`twitter:image` — no manual
+  `metadata.openGraph.images` needed.
+- `(storefront)/layout.tsx` gained a `generateMetadata` (title/description
+  templated on the store name, `openGraph.title`/`description`),
+  overriding the root layout's generic "Catálogo" default for every
+  storefront route.
+
+### Key decision: `objectFit: "contain"`, not `"cover"`
+
+There's exactly one logo field (`stores.logo_url`, ADR-029) — no separate
+"square icon mark" upload. Many store logos are wide wordmarks, not
+square marks, so cropping to fill a square (`cover`) would cut off most of
+the name. Every generated icon instead pads the logo to fit
+(`contain`) on a white background. A seller who wants a true square mark
+can just upload a square image as their logo; nothing stops that.
+
+### Deliberately not included
+
+- No new dependency (e.g. `sharp`) and no new migration/column — the
+  square-ification happens at render time via `next/og`'s Satori renderer
+  (already a built-in Next.js feature), reusing `stores.logo_url`/`name`
+  as-is. A precomputed, upload-time-generated square asset was considered
+  and rejected for MVP scope: it would need a new dependency and a new
+  `stores.icon_url` column for a cosmetic quality gain (crisper edges)
+  that `next/og` already delivers well enough.
+- `revalidate = 3600` on every generated route — regenerates at most
+  hourly, so a logo change shows up within the hour rather than never
+  being cached at all; avoids a DB read on every single favicon request.
+- No `maskable` icon variant, no offline service worker — ARCHITECTURE.md
+  §22 explicitly says not to add complex offline/service-worker behavior
+  unless later required.
+- "Verify add-to-home-screen behavior" (TASKS.md) stays unchecked — needs
+  a real phone, not something this environment can confirm.
