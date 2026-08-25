@@ -32,3 +32,8 @@ supabase/.branches
 
 # temp/delete folders
 /_to_delete
+
+# Accidental credential-scratch files from earlier in development —
+# see plans/001-urgent-secrets-and-vcs-hygiene.md
+cata-suupa.txt
+catalogo.json

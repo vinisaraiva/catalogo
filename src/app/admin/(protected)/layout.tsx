@@ -1,9 +1,10 @@
 import { redirect } from "next/navigation";
 import { getCurrentStoreMembership } from "@/lib/auth/get-current-store-membership";
+import { AdminNav } from "@/components/admin/admin-nav";
 
 /**
- * Shell for every /admin/* route except /admin/login (which is not nested
- * under this layout's protection — see route grouping below).
+ * Shell for every /admin/* route except /admin/login (which lives outside
+ * this route group — see the comment on the group folder name).
  *
  * Middleware (src/lib/supabase/middleware.ts) already redirects
  * unauthenticated requests before they reach here; this layout is the
@@ -35,7 +36,8 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       <header className="border-border flex items-center justify-between border-b px-4 py-3">
         <span className="text-sm font-medium">{membership.store.name}</span>
       </header>
-      <div className="p-4">{children}</div>
+      <AdminNav />
+      <main className="p-4 pb-20">{children}</main>
     </div>
   );
 }
