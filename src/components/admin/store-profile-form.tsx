@@ -67,18 +67,28 @@ export function StoreProfileForm({
     setIsUploadingLogo(true);
     setError(null);
 
-    const formData = new FormData();
-    formData.append("file", file);
-    const result = await uploadStoreLogo(formData);
-    setIsUploadingLogo(false);
+    // Same fix as product-images-manager.tsx / store-hero-images-manager.tsx:
+    // `requireStoreMembership()` inside the action can throw (not just
+    // return `{ ok: false }`) on an expired session or a failed membership
+    // lookup. Without this try/catch/finally, that left the button stuck on
+    // "Enviando..." forever with zero feedback — no error, no retorno.
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const result = await uploadStoreLogo(formData);
 
-    if (!result.ok) {
-      setError(result.error);
-      return;
+      if (!result.ok) {
+        setError(result.error);
+        return;
+      }
+
+      setLogoUrl(result.data.logo_url);
+      router.refresh();
+    } catch {
+      setError("Não foi possível enviar a logo. Verifique sua conexão e tente novamente.");
+    } finally {
+      setIsUploadingLogo(false);
     }
-
-    setLogoUrl(result.data.logo_url);
-    router.refresh();
   }
 
   return (

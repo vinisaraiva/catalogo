@@ -1352,6 +1352,51 @@ manager was written with the same guard from the start.
 - No reorder/"set as primary" UI, per above — can be added later if the
   seller ever asks for control over which photo appears more often.
 
+---
+
+## ADR-036 — Same silent-upload-failure bug found a third time, in `StoreProfileForm`'s logo upload
+
+**Status:** Accepted / bug fix
+
+Right after ADR-035 shipped, the user reported both the new hero-photo
+upload and the store logo upload showing no feedback at all — no error,
+no success, nothing. Re-checking `StoreProfileForm.handleLogoSelected`
+(the logo upload handler, part of the Phase 6 settings page from
+ADR-029) found the exact same bug ADR-035 already fixed twice
+(`ProductImagesManager`, `StoreHeroImagesManager`): no `try/catch` around
+the `await uploadStoreLogo(formData)` call. `requireStoreMembership()`
+inside that Server Action can throw instead of returning `{ ok: false }`,
+and an uncaught rejection left `isUploadingLogo` stuck `true` with
+nothing shown — the logo button just silently reverted to "Trocar logo"
+with no feedback either way. Fixed with the same `try/catch/finally`
+pattern, now present in all three upload handlers in the codebase.
+
+This was a real, independent occurrence of the bug (the logo upload
+predates this session's hero-image work and had never been touched), not
+a regression from ADR-035 — but it's worth noting the pattern: any
+client component calling a Server Action that goes through
+`requireStoreMembership()` needs this guard. If a fourth upload handler
+is ever added, check for it up front instead of waiting for a bug report.
+
+### Open question on the hero-photo upload
+
+Storage RLS was checked directly against the live project (`store-assets`
+bucket's `INSERT`/`UPDATE`/`DELETE` policies all gate on
+`is_store_member(storage.foldername(name)[2])`, the same working pattern
+already used by `product-images`/`ai-model-poses`) — nothing there
+explains a silent failure. The most likely explanation for the hero
+upload specifically still failing silently even though
+`StoreHeroImagesManager` shipped with the `try/catch` guard from the
+start: `src/lib/actions/store-hero-images.ts` is a brand-new `"use
+server"` file, and Next.js (this project runs on Turbopack) registers
+Server Actions at dev-server startup — a file added while `npm run dev`
+was already running may need a restart to be picked up, independent of
+any code bug. Asked the user to restart the dev server and, if the hero
+upload still fails afterward, to share whatever appears in the browser
+console or the `npm run dev` terminal at the moment of the failed
+upload — needed since this sandbox can't reach the user's local dev
+server or their live Supabase project directly to reproduce it.
+
 ## ADR-031 — Storefront light-theme audit: contrast fixes, two build-breaking bugs, and UX corrections
 
 **Status:** Accepted
