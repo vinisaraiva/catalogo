@@ -15,6 +15,11 @@ export type PriceDisplay =
       label: string;
       originalLabel: string | null;
       hasPromotion: boolean;
+      // Whole-percent discount ("-21%") when hasPromotion is true, null
+      // otherwise. Kept here rather than computed again in each component
+      // that wants a discount badge (ProductCard, PriceBlock) — see
+      // DECISIONS.md ADR-032.
+      discountPercent: number | null;
     };
 
 /**
@@ -60,13 +65,18 @@ export function getPriceDisplay(input: PriceDisplayInput): PriceDisplay {
     };
   }
 
-  const hasPromotion = effectivePrice === promotionalPrice && price != null && effectivePrice < price;
+  const hasPromotion =
+    effectivePrice === promotionalPrice && price != null && effectivePrice < price;
 
   return {
     mode: "show_price",
     label: formatCurrency(effectivePrice, currency),
     originalLabel: hasPromotion && price != null ? formatCurrency(price, currency) : null,
     hasPromotion,
+    discountPercent:
+      hasPromotion && price != null && price > 0
+        ? Math.round((1 - effectivePrice / price) * 100)
+        : null,
   };
 }
 

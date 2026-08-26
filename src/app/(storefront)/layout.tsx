@@ -4,6 +4,7 @@ import { getStorefrontStore } from "@/lib/store/get-storefront-store";
 import { SearchBar } from "@/components/storefront/search-bar";
 import { SelectionProvider } from "@/components/storefront/selection-provider";
 import { SelectionBar } from "@/components/storefront/selection-bar";
+import { ThemeToggle, THEME_INIT_SCRIPT } from "@/components/storefront/theme-toggle";
 import { cn } from "@/lib/utils";
 
 /**
@@ -66,25 +67,42 @@ export async function generateMetadata(): Promise<Metadata> {
  * its top edge sits 144px above the viewport bottom). Was `pb-28` (112px)
  * — confirmed with a real scrolled-to-bottom screenshot that the floating
  * CTA overlapped the last product card; see DECISIONS.md ADR-031.
+ *
+ * `id="storefront-root"` + the inline script right after it: how the
+ * light/dark toggle (DECISIONS.md ADR-032, `theme-toggle.tsx`) avoids a
+ * flash of the wrong theme. The script must be the *first child inside*
+ * this div, not a sibling before it — see `THEME_INIT_SCRIPT`'s own
+ * comment for why the ordering matters.
  */
 export default async function StorefrontLayout({ children }: { children: React.ReactNode }) {
   const store = await getStorefrontStore();
 
   return (
-    <div className={cn("storefront-theme bg-background text-foreground min-h-svh")}>
+    <div
+      id="storefront-root"
+      className={cn("storefront-theme bg-background text-foreground min-h-svh")}
+    >
+      {/* Inline (no `src`) and unconditional — runs during HTML parsing,
+          before hydration, so a saved dark-mode preference applies before
+          first paint. See THEME_INIT_SCRIPT's own comment for why this
+          must be the first child here, not a sibling before this div. */}
+      <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
       <SelectionProvider>
         <header className="bg-brand text-brand-foreground sticky top-0 z-10 space-y-3 px-4 pt-3 pb-4 shadow-md">
-          <Link href="/" className="flex items-center gap-2.5">
-            {store.logo_url ? (
-              <span className="ring-brand-foreground/30 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white p-1 ring-2">
-                {/* eslint-disable-next-line @next/next/no-img-element -- arbitrary admin-entered URL, not a known image host */}
-                <img src={store.logo_url} alt="" className="h-full w-full object-contain" />
+          <div className="flex items-center justify-between gap-2">
+            <Link href="/" className="flex min-w-0 items-center gap-2.5">
+              {store.logo_url ? (
+                <span className="ring-brand-foreground/30 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white p-1 ring-2">
+                  {/* eslint-disable-next-line @next/next/no-img-element -- arbitrary admin-entered URL, not a known image host */}
+                  <img src={store.logo_url} alt="" className="h-full w-full object-contain" />
+                </span>
+              ) : null}
+              <span className="font-display truncate text-2xl tracking-wide uppercase">
+                {store.name}
               </span>
-            ) : null}
-            <span className="font-display truncate text-2xl tracking-wide uppercase">
-              {store.name}
-            </span>
-          </Link>
+            </Link>
+            <ThemeToggle />
+          </div>
           <SearchBar />
         </header>
         <main className="p-4 pb-40">{children}</main>

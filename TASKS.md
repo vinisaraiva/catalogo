@@ -522,6 +522,42 @@ skipped integration tests. See DECISIONS.md ADR-028 and V-001.
 - [x] Contrast
 - [x] Touch target sizes
 
+> Storefront visual redesign (ADR-031, ADR-032): every `.storefront-theme`
+> and `.storefront-dark` color pairing was checked against WCAG AA with a
+> hand-rolled contrast-ratio script, not eyeballed — several pairs
+> (accent, destructive, border, whatsapp) were darkened until they passed.
+> Touch targets (size chips, category filter pills) were bumped to
+> `min-h-11`/`min-w-11` (44px), CLAUDE.md's mobile touch-target standard.
+> Not checked off elsewhere in the app outside the storefront route group
+> — admin panel a11y is still open.
+
+> Light/dark toggle (ADR-032): the storefront defaults to the light theme
+> approved in ADR-031; a manual toggle (`ThemeToggle`) offers an opt-in
+> dark variant, remembered per browser via `localStorage`, with no flash
+> of the wrong theme on repeat visits (blocking inline init script).
+
+> Home hero refinement (ADR-033, ADR-034, ADR-035): headline enlarged and
+> a direct `WhatsappCta` added to the hero itself; the hero background is
+> now a full-width photo with a dark/brand gradient overlay so the
+> headline stays readable, instead of the flat gradient from ADR-031. The
+> photo pool is admin-managed (`store_hero_images`, uploaded from
+> Configurações → "Banner da página inicial"), not static files under
+> `public/` — ADR-034's static-file version shipped first and was
+> superseded within the same session by explicit user request before any
+> real photos were dropped in. One photo is picked at random server-side
+> per page load; an empty pool falls back to the ADR-031/033 gradient.
+
+> Admin image-upload silent-failure fix (found while testing the hero
+> upload flow, but present since `ProductImagesManager` shipped): the
+> Server Action's `requireStoreMembership()` call can throw instead of
+> returning `{ ok: false }` (expired session, failed membership lookup),
+> and neither `product-images-manager.tsx` nor the new
+> `store-hero-images-manager.tsx` had a `try/catch` around it — the
+> upload button was left stuck on "Enviando..." forever with zero
+> user-visible error. Both now wrap the action call in
+> `try/catch/finally`.
+
+
 > Storefront-only pass (ADR-031): verified `.storefront-theme`'s WCAG
 > contrast computationally (OKLCH → luminance → ratio) and fixed 4 real
 > AA failures (`--whatsapp`, `--accent`, `--destructive`, `--border`/

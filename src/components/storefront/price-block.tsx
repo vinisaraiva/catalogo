@@ -31,10 +31,15 @@ export function PriceBlock({
   }
 
   return (
-    <p className={cn("flex items-baseline gap-2", className)}>
+    <p className={cn("flex flex-wrap items-baseline gap-2", className)}>
       <span className="font-display text-primary tracking-wide">{display.label}</span>
       {display.originalLabel ? (
         <span className="text-muted-foreground text-xs line-through">{display.originalLabel}</span>
+      ) : null}
+      {display.discountPercent ? (
+        <span className="bg-destructive text-destructive-foreground rounded-full px-1.5 py-0.5 text-[10px] font-bold">
+          -{display.discountPercent}%
+        </span>
       ) : null}
     </p>
   );

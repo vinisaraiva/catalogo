@@ -71,6 +71,7 @@
   --color-brand-foreground: var(--brand-foreground);
   --color-whatsapp: var(--whatsapp);
   --color-whatsapp-foreground: var(--whatsapp-foreground);
+  --color-price-on-photo: var(--price-on-photo);
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -146,7 +147,68 @@
   --whatsapp: oklch(0.5 0.19 150);
   --whatsapp-foreground: oklch(0.99 0 0);
 
+  /* Product-card price, shown over a photo + dark gradient overlay
+     (product-card.tsx) rather than the page background — `--primary`
+     itself doesn't work there (only 4.17:1 on the near-black overlay,
+     borderline for a bold-but-not-huge price). A warm gold reads as a
+     "price tag" regardless of theme and clears 12.7:1 on that overlay in
+     both light and dark (verified, not overridden below — it's the same
+     value in `.storefront-dark` on purpose). See DECISIONS.md ADR-032.
+  */
+  --price-on-photo: oklch(0.84 0.14 85);
+
   font-family: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+}
+
+/**
+ * Optional dark variant of the storefront theme — off by default (the
+ * store owner chose the light palette above as the official look), toggled
+ * client-side by `ThemeToggle` (storefront/theme-toggle.tsx) and persisted
+ * to localStorage; `(storefront)/layout.tsx`'s inline script applies this
+ * class before hydration so there's no flash of the wrong theme on
+ * repeat visits. Same charcoal-and-volt-green language as the VOLT_LAB
+ * reference the store owner liked, re-tuned so every pair still clears
+ * WCAG AA — see DECISIONS.md ADR-032 for the verified contrast ratios.
+ *
+ * `--whatsapp`/`--whatsapp-foreground` and `--price-on-photo` are
+ * deliberately NOT redeclared here: both were chosen to already work on a
+ * dark surface (the WhatsApp pill and the card photo overlay are always
+ * dark regardless of page theme), so the light values carry over as-is.
+ */
+.storefront-theme.storefront-dark {
+  --background: oklch(0.16 0.004 260);
+  --foreground: oklch(0.94 0.005 260);
+  --card: oklch(0.205 0.006 260);
+  --card-foreground: oklch(0.94 0.005 260);
+  --popover: oklch(0.205 0.006 260);
+  --popover-foreground: oklch(0.94 0.005 260);
+  /* Volt lime — the reference's signature accent. 12.68:1 with a
+     near-black label, 12.92:1 as text on the dark background. */
+  --primary: oklch(0.85 0.22 128);
+  --primary-foreground: oklch(0.17 0.03 128);
+  --secondary: oklch(0.24 0.006 260);
+  --secondary-foreground: oklch(0.94 0.005 260);
+  --muted: oklch(0.22 0.006 260);
+  --muted-foreground: oklch(0.68 0.01 260);
+  /* Cyan — the reference's secondary highlight, 10.13:1 with a near-black
+     label. */
+  --accent: oklch(0.78 0.13 200);
+  --accent-foreground: oklch(0.16 0.03 200);
+  --destructive: oklch(0.66 0.2 25);
+  --destructive-foreground: oklch(0.16 0.02 25);
+  /* L=0.53 — the lowest lightness that still clears 3:1 against both
+     --background (3.68:1) and --card (3.39:1) at this chroma/hue. */
+  --border: oklch(0.53 0.008 260);
+  --input: oklch(0.53 0.008 260);
+  --ring: oklch(0.85 0.22 128);
+  --success: oklch(0.6 0.17 145);
+  --success-foreground: oklch(0.99 0 0);
+  /* Header stays a dark surface rather than a full-width volt-green bar —
+     the reference itself uses a blurred dark header, not a solid accent
+     block; a wall of lime behind the logo/search would fight the volt
+     accent's job of marking CTAs. */
+  --brand: oklch(0.13 0.004 260);
+  --brand-foreground: oklch(0.96 0.005 260);
 }
 
 /* Horizontally-scrolling rows (team crests, size chips) — hide the

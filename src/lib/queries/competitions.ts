@@ -29,3 +29,24 @@ export async function getCompetition(storeId: string, id: string): Promise<Compe
   if (error) throw new Error(`Failed to load competition: ${error.message}`);
   return data;
 }
+
+/**
+ * Mirrors `getTeamBySlug` (queries/teams.ts) — used by the storefront's
+ * "Categorias" browsing (Home tiles → `/busca?competition=slug`; see
+ * DECISIONS.md ADR-032), where the URL carries a slug, not an id.
+ */
+export async function getCompetitionBySlug(
+  storeId: string,
+  slug: string,
+): Promise<CompetitionRow | null> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("competitions")
+    .select("*")
+    .eq("store_id", storeId)
+    .eq("slug", slug)
+    .maybeSingle();
+
+  if (error) throw new Error(`Failed to load competition: ${error.message}`);
+  return data;
+}

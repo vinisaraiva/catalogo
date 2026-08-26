@@ -20,6 +20,12 @@ const TEAM_TYPE_LABEL: Record<string, string> = {
  * param so the chip row can mix collection, competition and season
  * options the way PRD §18's own example list does ("Todos, Atual, Retrô,
  * Libertadores, Treino, ...").
+ *
+ * The floating "Fale conosco" WhatsApp button only shows in the empty
+ * state now (DECISIONS.md ADR-032) — every `ProductCard` in the grid
+ * already carries its own direct WhatsApp button, and keeping a
+ * fixed-position floating one too meant it visually sat on top of
+ * whichever right-column card happened to scroll under it.
  */
 export default async function TeamPage({
   params,
@@ -125,7 +131,19 @@ export default async function TeamPage({
       ) : null}
 
       {filteredProducts.length === 0 ? (
-        <p className="text-muted-foreground py-8 text-center text-sm">Nenhum produto encontrado.</p>
+        <div className="flex flex-col items-center gap-4 py-8 text-center">
+          <p className="text-muted-foreground text-sm">Nenhum produto encontrado.</p>
+          {/* No ProductCard here to carry its own WhatsApp button, so —
+              same as Home's empty state — this keeps an inline fallback. */}
+          {store.whatsapp_number ? (
+            <WhatsappCta
+              phoneNumber={store.whatsapp_number}
+              message={`Olá! Vi as camisas do ${team.name} no catálogo da ${store.name} e gostaria de saber mais.`}
+            >
+              Fale conosco
+            </WhatsappCta>
+          ) : null}
+        </div>
       ) : (
         <div className="grid grid-cols-2 gap-3">
           {filteredProducts.map((product) => (
@@ -133,22 +151,6 @@ export default async function TeamPage({
           ))}
         </div>
       )}
-
-      {store.whatsapp_number ? (
-        // Was missing before this pass — Home has this CTA (CLAUDE.md's
-        // public-storefront rules: "should provide WhatsApp CTA"), but a
-        // customer browsing one team's shirts had no persistent way to
-        // open WhatsApp short of opening a specific product. Same
-        // bottom-24/pulse treatment as Home for consistency.
-        <WhatsappCta
-          phoneNumber={store.whatsapp_number}
-          message={`Olá! Vi as camisas do ${team.name} no catálogo da ${store.name} e gostaria de saber mais.`}
-          className="animate-whatsapp-pulse fixed right-4 bottom-24 z-10 rounded-full shadow-lg"
-          size="lg"
-        >
-          Fale conosco
-        </WhatsappCta>
-      ) : null}
     </div>
   );
 }

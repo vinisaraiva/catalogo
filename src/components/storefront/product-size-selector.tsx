@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { MessageCircle } from "lucide-react";
+import { MessageCircle, ShieldCheck } from "lucide-react";
 import { useSelection } from "@/components/storefront/selection-provider";
 import { buildSingleProductMessage, buildWhatsappUrl } from "@/domain/whatsapp";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -122,6 +122,19 @@ export function ProductSizeSelector({
           </a>
         ) : null}
       </div>
+
+      {whatsappHref ? (
+        // A "trust line" idea borrowed from the old store (DECISIONS.md
+        // ADR-032) — its badge said "Compra 100% Protegida", which this
+        // app can't honestly claim (no checkout/payment/escrow exists to
+        // back that promise, and CLAUDE.md rules out building one for the
+        // MVP). This says only what's actually true: the chat opens
+        // directly with the seller, no account or payment step involved.
+        <p className="text-muted-foreground flex items-center gap-1.5 text-xs">
+          <ShieldCheck className="size-3.5 shrink-0" aria-hidden="true" />
+          Atendimento direto com o vendedor pelo WhatsApp — sem cadastro.
+        </p>
+      ) : null}
     </div>
   );
 }

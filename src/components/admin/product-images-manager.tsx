@@ -6,7 +6,11 @@ import { Camera, ChevronDown, ChevronUp, ImagePlus, Star, Trash2 } from "lucide-
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import type { Database } from "@/types/database";
-import { deleteProductImage, reorderProductImages, uploadProductImages } from "@/lib/actions/product-images";
+import {
+  deleteProductImage,
+  reorderProductImages,
+  uploadProductImages,
+} from "@/lib/actions/product-images";
 
 type ProductImageRow = Database["public"]["Tables"]["product_images"]["Row"];
 
@@ -52,19 +56,33 @@ export function ProductImagesManager({
     setIsUploading(true);
     setError(null);
 
-    const formData = new FormData();
-    for (const file of Array.from(files)) formData.append("files", file);
-    formData.append("image_type", "original");
+    // `uploadProductImages` can *throw* (not just return `{ ok: false }`) —
+    // `requireStoreMembership()` inside it throws `UnauthorizedError` if
+    // the session cookie expired while this page was open, and it throws a
+    // plain `Error` if the store-membership lookup itself fails. Before
+    // this try/catch, either case left the promise rejected with nothing
+    // downstream to handle it: `setIsUploading(false)` never ran (the
+    // button stayed stuck on "Enviando..." forever) and `setError` never
+    // ran either, so nothing on screen told the admin the upload had
+    // failed — exactly "no feedback, no error, but nothing uploads".
+    try {
+      const formData = new FormData();
+      for (const file of Array.from(files)) formData.append("files", file);
+      formData.append("image_type", "original");
 
-    const result = await uploadProductImages(productId, formData);
-    setIsUploading(false);
+      const result = await uploadProductImages(productId, formData);
 
-    if (!result.ok) {
-      setError(result.error);
-      return;
+      if (!result.ok) {
+        setError(result.error);
+        return;
+      }
+
+      setImages((prev) => [...prev, ...result.data]);
+    } catch {
+      setError("Não foi possível enviar a foto. Verifique sua conexão e tente novamente.");
+    } finally {
+      setIsUploading(false);
     }
-
-    setImages((prev) => [...prev, ...result.data]);
   }
 
   async function handleDelete(imageId: string) {

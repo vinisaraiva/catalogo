@@ -9,7 +9,11 @@ describe("getPriceDisplay", () => {
   });
 
   it("returns the consult CTA for consult mode, ignoring any stored price", () => {
-    const result = getPriceDisplay({ price: 100, promotionalPrice: null, priceDisplayMode: "consult" });
+    const result = getPriceDisplay({
+      price: 100,
+      promotionalPrice: null,
+      priceDisplayMode: "consult",
+    });
     expect(result.mode).toBe("consult");
     if (result.mode === "consult") {
       expect(result.label).toBe("Consultar valor");
@@ -18,12 +22,17 @@ describe("getPriceDisplay", () => {
   });
 
   it("formats a plain price for show_price with no promotion", () => {
-    const result = getPriceDisplay({ price: 149.9, promotionalPrice: null, priceDisplayMode: "show_price" });
+    const result = getPriceDisplay({
+      price: 149.9,
+      promotionalPrice: null,
+      priceDisplayMode: "show_price",
+    });
     expect(result.mode).toBe("show_price");
     if (result.mode === "show_price") {
       expect(result.label).toBe(formatCurrency(149.9));
       expect(result.hasPromotion).toBe(false);
       expect(result.originalLabel).toBeNull();
+      expect(result.discountPercent).toBeNull();
     }
   });
 
@@ -38,6 +47,8 @@ describe("getPriceDisplay", () => {
       expect(result.label).toBe(formatCurrency(149.9));
       expect(result.originalLabel).toBe(formatCurrency(200));
       expect(result.hasPromotion).toBe(true);
+      // (200 - 149.9) / 200 = 25.05% → rounds to 25.
+      expect(result.discountPercent).toBe(25);
     }
   });
 
@@ -51,11 +62,16 @@ describe("getPriceDisplay", () => {
     if (result.mode === "show_price") {
       expect(result.label).toBe(formatCurrency(100));
       expect(result.hasPromotion).toBe(false);
+      expect(result.discountPercent).toBeNull();
     }
   });
 
   it("falls back to consult when show_price has no price configured", () => {
-    const result = getPriceDisplay({ price: null, promotionalPrice: null, priceDisplayMode: "show_price" });
+    const result = getPriceDisplay({
+      price: null,
+      promotionalPrice: null,
+      priceDisplayMode: "show_price",
+    });
     expect(result.mode).toBe("consult");
   });
 });

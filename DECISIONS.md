@@ -964,6 +964,394 @@ can just upload a square image as their logo; nothing stops that.
 - "Verify add-to-home-screen behavior" (TASKS.md) stays unchecked — needs
   a real phone, not something this environment can confirm.
 
+---
+
+## ADR-031 — Storefront visual redesign: sports color identity, display typography, floating-CTA spacing fix
+
+**Status:** Accepted / small addition
+
+The user reported the public storefront "ficou muito simples, precisa de
+um visual esportivo, moderno" (too plain, needs a sporty, modern look) —
+functionally complete but visually generic. This is a front-end-only
+visual pass: no admin/backend/AI logic changed, mobile-first and
+shadcn/ui + Tailwind v4 preserved per the standing constraints.
+
+### What was added
+
+- `.storefront-theme` (`globals.css`) — a scoped theme block on the
+  storefront's wrapper `<div>` (`(storefront)/layout.tsx`), the same
+  mechanism as `.dark`: it redefines the CSS custom properties `@theme
+  inline` already points every `bg-*`/`text-*` utility at, just scoped to
+  one route group instead of toggled on `<html>`. The admin panel keeps
+  the plain shadcn/ui neutral theme untouched. Palette: a bright blue
+  `--primary` (CTAs, prices, active states) with a warm orange `--accent`
+  for highlights/badges, on a near-white base so product photos stay the
+  visual focus. `--whatsapp` stays its own recognizable green, deliberately
+  separate from `--primary`, so every WhatsApp button reads as "this opens
+  WhatsApp" rather than blending into the site's own blue/orange accent
+  system.
+- Every color pairing was numerically checked against WCAG AA (a hand-rolled
+  OKLCH→sRGB→contrast-ratio script), not eyeballed, and three pairs that
+  failed were darkened before shipping:
+  - `--accent` (white text on it, hero gradient/button hover): 2.81:1 →
+    5.15:1.
+  - `--destructive` (white "Esgotado" badge text): 4.28:1 → 5.29:1.
+  - `--border`/`--input` (search input, size chips, card edges, against the
+    near-white background): 1.18:1 → ~3.7:1, clearing WCAG 1.4.11's 3:1
+    floor for functional UI-element boundaries.
+  - `--whatsapp` (white text on the site's single most-repeated conversion
+    action — "Fale conosco" / "Falar no WhatsApp" / "Finalizar"): 2.24:1 →
+    5.11:1.
+- Display typography: Bebas Neue (condensed "scoreboard"/jersey-lettering
+  caps) for headings, team names, and prices, paired with Plus Jakarta Sans
+  (a humanist-geometric grotesk) for body/UI text — a contrast pairing
+  (condensed display vs. text face), not two similar sans-serifs. Both are
+  self-hosted via `@fontsource`, imported inside `(storefront)/layout.tsx`
+  rather than the root layout, for two reasons: the admin bundle never
+  downloads these font files (Next.js code-splits per-route CSS imports),
+  and the build has no runtime dependency on reaching
+  fonts.googleapis.com — `next/font/google` failed outright in this
+  session's own build sandbox.
+- `pb-40` (was `pb-28`) on the storefront `<main>`: a real scrolled-to-
+  bottom screenshot showed the floating "Fale conosco" WhatsApp button
+  (`fixed ... bottom-24 h-12`) overlapping the last product card. `pb-40`
+  (160px) reserves enough room for whichever fixed element is showing —
+  `SelectionBar` and/or the floating CTA — below the last row of content.
+
+### Reason
+
+CLAUDE.md's "coding standards" ask for a deliberate, on-brand mobile-first
+UI, and PRD §17 frames the storefront as the store's public identity — a
+generic/default-looking catalog undersells the seller's product. No PRD or
+architecture conflict: this is presentation-layer only, so no need to stop
+and flag it first (CLAUDE.md "when ambiguity does not block development...
+continue without unnecessary interruption").
+
+---
+
+## ADR-032 — Light/dark theme toggle; old-store-derived features (discount badges, Categorias, trust line)
+
+**Status:** Accepted / small addition
+
+The user asked for two things together: keep the light theme from ADR-031
+as the default/official look, but add a working option to switch to dark;
+and look at their previous store
+(`https://saraiva-importss.offstore.me/`) for ideas worth reusing. This
+sandbox's network egress couldn't reach that URL for a visual screenshot
+(`net::ERR_TUNNEL_CONNECTION_FAILED`), so the old store's text content was
+read via `WebFetch` instead, and the user picked which specific ideas to
+bring over from a shortlist: the discount-percent badge, competition-based
+"Categorias" on Home, and a "compra segura"-style trust line.
+
+### What was added
+
+- **Theme toggle** (`components/storefront/theme-toggle.tsx`) — a single
+  button toggling one class (`storefront-dark`) on `#storefront-root`
+  (`(storefront)/layout.tsx`), persisted to `localStorage`
+  (`catalogo-theme`). No React context: reading/writing one DOM class
+  directly is simpler than a provider for one on/off switch. A blocking
+  inline `<script dangerouslySetInnerHTML>` (`THEME_INIT_SCRIPT`) is the
+  *first child inside* `#storefront-root` (not a sibling before it — the
+  HTML parser adds a node to the tree as soon as its opening tag is read,
+  so the div already exists by the time this script runs, but a script
+  placed before the div would find nothing and silently no-op) and applies
+  a saved "dark" preference before first paint, so there's no flash of the
+  wrong theme on repeat visits.
+- **`.storefront-theme.storefront-dark`** (`globals.css`) — an opt-in dark
+  variant reusing the charcoal-and-volt-green language from the VOLT_LAB
+  reference design the user liked, re-tuned so every pair clears WCAG AA
+  (verified the same way as ADR-031): primary-foreground on primary
+  12.68:1, primary on background 12.92:1, accent-foreground on accent
+  10.13:1, destructive-foreground on destructive 5.70:1, border against
+  background 3.68:1 / against card 3.39:1 (L=0.53, the lowest lightness
+  that still clears 3:1 against both). `--whatsapp`/`--whatsapp-foreground`
+  and the new `--price-on-photo` (below) are deliberately *not*
+  redeclared in the dark block — both were chosen to already work on a
+  dark surface (the WhatsApp pill and the card photo overlay are always
+  dark regardless of page theme), so the light-mode values carry over
+  as-is.
+- **`--price-on-photo`** — a warm gold token for the price shown over a
+  product photo's dark gradient overlay (`ProductCard`). `--primary`
+  itself doesn't work there (only 4.17:1 on the near-black overlay); gold
+  reads as a "price tag" regardless of theme and clears 12.7:1 on that
+  overlay in both light and dark.
+- **`ProductCard` full-bleed rewrite** — name, price, and a direct
+  WhatsApp CTA now live in a gradient overlay on top of the product photo
+  itself, instead of a photo-then-text-block stack, closer to the old
+  store's card layout. `aspect-[3/4]` on the *outer* card element (not a
+  separate inner wrapper) keeps every card in a grid row naturally equal
+  height. The card's own `Link` is an absolutely-positioned full-card hit
+  target *behind* the visible content (`z-0`); the WhatsApp `<a>` sits on
+  top (`z-[2]`, `pointer-events-auto`) as a sibling, since it can't be
+  nested inside the `Link` — tapping the photo/name opens the product,
+  tapping the button opens WhatsApp. No favorite/heart button here (the
+  old store had one) — CLAUDE.md rules out customer accounts for the MVP,
+  and a heart that doesn't actually save anywhere would be a lie. Same
+  reasoning ruled out copying the old store's bottom tab navigation
+  (Home/Favoritos/Perfil) — a Favoritos/Perfil tab needs an account this
+  app deliberately doesn't have.
+- **Discount badge** — `domain/price.ts`'s `PriceDisplay` (`show_price`
+  variant) gained `discountPercent: number | null`, computed once
+  (`Math.round((1 - effectivePrice / price) * 100)`) rather than
+  recomputed in each component that renders it (`ProductCard`,
+  `PriceBlock`, both show a "-21%"-style chip when set).
+- **"Categorias" on Home** (`(storefront)/page.tsx`) — gradient tiles
+  linking to `/busca?competition=slug`, one per competition that actually
+  has at least one published product (a competition probed via
+  `listPublicProducts(..., { limit: 1 })` and skipped if empty, so a tile
+  never leads to a dead page). Data-driven per CLAUDE.md's "Product
+  classification rules" — not a hardcoded Brasileirão/Europa/Seleções
+  list, whatever competitions the seller has actually created in admin
+  show up here, the same principle `time/[slug]`'s own dynamic filter
+  chips already use. `listCompetitions` itself was left unfiltered (no
+  `.eq("active", true)` added) since it's shared with three admin pages
+  that need every competition, not just active ones — RLS
+  (`competitions_public_read_active`) is what scopes the anonymous
+  storefront caller to active rows.
+- **`?competition=slug` on `/busca`** (`getCompetitionBySlug`, mirroring
+  `getTeamBySlug`) — reused the existing search route rather than adding
+  a `/categoria/[slug]` route, since browsing by competition is filtering,
+  same as a text search, just by a different key. Free-text `q` always
+  wins if both are present.
+- **Trust line** (`ProductSizeSelector`, product page) — "Atendimento
+  direto com o vendedor pelo WhatsApp — sem cadastro." The old store's
+  badge said "Compra 100% Protegida" ("100% protected purchase"); this app
+  has no checkout/payment/escrow system to back that claim, and CLAUDE.md
+  explicitly rules out building one for the MVP, so the copy was rewritten
+  to state only what's actually true instead of ported verbatim.
+
+### Bug found and fixed during this pass
+
+Visual QA (`Playwright` screenshots at real viewport size, not just
+full-page) showed the pre-existing floating "Fale conosco" WhatsApp button
+visually overlapping the new per-card WhatsApp button in the grid's right
+column. Fixed by removing the floating global `WhatsappCta` from Home's
+and the team page's main (populated) render paths — every `ProductCard`
+already carries its own direct WhatsApp button — keeping it only inside
+each page's empty-catalog/empty-results fallback, where there's no card to
+collide with. PRD §17's "WhatsApp CTA on every reachable state" still
+holds: a card's own button covers it whenever a card exists, and the
+non-floating fallback covers it when none do.
+
+### Deliberately not included
+
+- Favorites (heart button) and a bottom tab bar with Profile — both
+  appear in the old store and the VOLT_LAB reference, but both need a
+  customer account to be honest (a heart or profile tab that doesn't
+  persist anywhere is a fake feature), and CLAUDE.md rules out customer
+  accounts for the MVP.
+- "Compra 100% Protegida" was not copied verbatim — see the trust-line
+  note above.
+
+---
+
+## ADR-033 — Home hero: bigger headline, direct WhatsApp CTA baked into the hero
+
+**Status:** Accepted / small addition
+
+After ADR-032 shipped, the user shared reference screens (a "Volt_Lab" mock
+storefront) and asked specifically to make the Home hero's typography
+bigger/more impactful and give it a more visible CTA button — not to adopt
+the reference's photo-category cards or its bottom tab bar (both were
+explicitly declined when offered as options).
+
+### What changed
+
+- Headline copy shortened from "Confira nosso catálogo esportivo" to
+  "Vista a camisa do seu time" (two short lines instead of a longer
+  two-line wrap) and sized up from `text-3xl` (30px) to a fixed `2.5rem`
+  (40px) with tighter `leading-[0.88]` and `text-balance` for even
+  wrapping. Short lines were a deliberate choice, not just a stylistic
+  one: at `text-3xl` the old copy already used the hero's full width per
+  line, so simply bumping the font size without shortening the copy would
+  have overflowed on a 375–390px phone — confirmed both ways with a real
+  Playwright screenshot at a 390px viewport before finalizing (the
+  "impeccable" design skill's own guidance: test heading copy at the
+  actual breakpoint, don't assume a clamp is safe).
+- The small "Shirt icon + store name" line was dropped (the store name was
+  already redundant with the header directly above); "Catálogo oficial"
+  became a single pill "Catálogo oficial · {store name}" so the hero
+  keeps that context without a second row competing with the headline for
+  attention.
+- A `WhatsappCta` (`size="lg"`) now sits directly in the hero, below the
+  subtext — "Falar no WhatsApp" opens a chat with a generic
+  "Olá! Vi o catálogo da {store} e gostaria de saber mais." message, the
+  same copy already used in the empty-catalog fallback (ADR-032). Unlike
+  the floating global CTA removed in ADR-032, this one is part of normal
+  page flow (not `fixed`-position), so it can never collide with a
+  `ProductCard`'s own button lower on the page — it solves "make the CTA
+  more evident" without reintroducing the bug ADR-032 fixed.
+
+### Deliberately not included (from the same reference screens)
+
+- Photo-backed category cards ("Shop by Protocol"-style, with a real
+  photograph per tile instead of the current gradient) — not selected by
+  the user this round; the "Categorias" tiles from ADR-032 are unchanged.
+- A dedicated "Fale com um especialista" consultation section — not
+  selected; the hero's own WhatsApp CTA plus every `ProductCard`'s button
+  already cover PRD §17's WhatsApp-CTA requirement.
+- The reference's bottom tab bar (Home/Catálogo/Favoritos/Perfil) — still
+  declined for the same reason as ADR-032: Favoritos/Perfil need a
+  customer account, which CLAUDE.md rules out for the MVP.
+
+---
+
+## ADR-034 — Home hero: full-width background photo; four static image slots
+
+**Status:** Accepted / small addition
+
+The user asked for the Home hero to use a real full-width photo with text
+over it (matching the Volt_Lab reference's layout) instead of the flat
+gradient from ADR-031/ADR-033, and asked for four AI-generated football
+photos (a packed stadium, a player celebrating, fans celebrating, plus a
+fourth of the user's choice) to use as that photo. This session has no
+image-generation tool connected, so it can't produce those photos itself;
+offered the user a choice of how to proceed (send real photos, use
+temporary stock photos, or ship the code now with empty slots), and the
+user chose to supply the four photos separately once the code is ready.
+
+### What was added
+
+- `HERO_IMAGES` (`(storefront)/page.tsx`) — four fixed paths under
+  `public/hero/` (`hero-1.jpg` … `hero-4.jpg`, documented with their
+  intended theme in `public/hero/README.md`). Not admin/DB-controlled:
+  PRD.md has no "hero image" field on `stores`, and a Storage-backed
+  upload flow for four fixed marketing photos would be more schema and
+  admin UI than four static files earn. Dropping real files in under
+  those names is the entire "deploy" step — no code or migration needed
+  afterward.
+- One photo shown per page load, chosen server-side at random
+  (`pickHeroImage`), not all four stacked in a client-side crossfade.
+  PRD §17 / CLAUDE.md's "should load fast on mobile" ruled out downloading
+  four full-bleed hero photos on every visit just to show one at a time; a
+  single random pick still gives a visitor who reloads, or returns later,
+  a different photo each time, without the extra weight.
+- `Math.random()` lives in a plain helper function (`pickHeroImage`)
+  outside the page component, not inline in the component body — the
+  `react-hooks/purity` lint rule (a React Compiler rule bundled with this
+  project's ESLint config) flags any direct call to a known-impure
+  function like `Math.random` inside a component as an impure render,
+  even though this is a Server Component executed fresh per request with
+  no re-render to worry about. Moving the call into a separate,
+  non-component-named function satisfies the linter without suppressing
+  the rule.
+- Layout: the hero container gained `min-h-[440px]` and switched from
+  content-sized padding to `flex flex-col justify-end`, so the headline
+  block sits over the lower portion of the photo (more of the photo
+  visible above it) instead of the photo being invisible behind a flat
+  color. A dark gradient (`from-black/90 via-black/45 to-black/10`,
+  bottom-to-top) keeps the headline/CTA readable over any photo; a second,
+  low-opacity `mix-blend-multiply` wash of `--primary`/`--accent` keeps
+  the hero reading as "this store" rather than a generic photo, without
+  fighting the photo's own colors as hard as a flat brand-color overlay
+  would. The two decorative blurred circles from ADR-031/033 (meant to add
+  interest to a flat gradient) were removed — a real photo doesn't need
+  them.
+- Graceful missing-asset handling: `next/image` doesn't validate a plain
+  string `src` against `public/` at build time, so this all ships and
+  builds cleanly with zero photos present — an empty slot just shows the
+  gradient overlay with nothing under it (confirmed via `npm run build`
+  with `public/hero/` empty except the README).
+
+---
+
+## ADR-035 — Home hero photos: admin-managed (`store_hero_images`), superseding ADR-034
+
+**Status:** Accepted
+
+Before any real photo was ever dropped into `public/hero/`, the user
+supplied three AI-generated football photos and asked explicitly that
+"essas fotos devem ser cadastradas no admin de forma que o usuario possa
+alterar depois no admin" — the hero photos must be editable from the
+admin panel, not swapped by a developer redeploying static files. This
+directly supersedes ADR-034's static-file design, which was accepted only
+because at that moment "four static files" seemed like less schema and
+admin UI than a Storage-backed upload flow was worth. The user's request
+makes that trade-off wrong: they want to add/replace/remove hero photos
+themselves, whenever they want, without asking a developer to redeploy —
+so the static-file approach is replaced, not kept alongside it.
+
+### What changed
+
+- **New table `store_hero_images`** (migration
+  `20260826000001_store_hero_images.sql`): `id`, `store_id` (FK →
+  `stores`, cascade delete), `url`, `sort_order`, `created_at`. One row
+  per photo, `store_id`-scoped like every other store-owned entity per
+  CLAUDE.md's multi-store-ready rule. No `image_type`/`product_id` —
+  unlike `product_images` this isn't attached to a product; it's a small
+  pool of marketing photos the storefront Home picks one of at random per
+  request, same "one photo per page load" behavior ADR-034 already
+  established.
+- **RLS**: `store_hero_images_public_read` (anon + authenticated select,
+  scoped to `stores.active = true`, mirroring
+  `product_images_public_read_published`'s join pattern) and
+  `store_hero_images_member_all` (authenticated all-operations, gated by
+  `is_store_member(store_id)`, mirroring `product_images_member_all`).
+  Both are direct copies of an already-reviewed pattern, not a new
+  design.
+- **Storage**: reuses the existing `store-assets` bucket (created in
+  ADR-029 for the store logo) under a new `stores/{store_id}/hero/`
+  subfolder. Confirmed via the live project's Storage policies that they
+  scope writes generically by the object path's `store_id` segment
+  (`storage.foldername(name)[2]`), not by a "logo"-specific filename —
+  so no new bucket and no new Storage policy was needed, only a new path
+  convention (`src/domain/store-hero-image.ts`).
+- **Admin UI**: a new "Banner da página inicial" section in
+  Configurações (`StoreHeroImagesManager`), between "Minha loja" and
+  "Inteligência artificial". Deliberately simpler than
+  `ProductImagesManager`: a thumbnail grid with a per-photo delete button
+  and one "Adicionar fotos" multi-upload button — no reorder, no "set
+  primary", since the storefront picks one at random regardless of
+  order (CLAUDE.md "avoid unnecessary abstractions"). Both the upload and
+  delete handlers are wrapped in `try/catch/finally` from the start,
+  reusing the fix documented below for `ProductImagesManager`.
+- **Server Actions** (`uploadStoreHeroImages`, `deleteStoreHeroImage`):
+  the same validate-all-then-upload-all-or-nothing shape as
+  `uploadProductImages` — every file's mime/size validated before any
+  upload starts; a mid-batch Storage failure rolls back already-uploaded
+  files; a DB insert failure after a successful Storage upload also rolls
+  back the Storage files.
+- **Storefront** (`(storefront)/page.tsx`): `HERO_IMAGES`/the static
+  `pickHeroImage()` from ADR-034 replaced with `listStoreHeroImages(store.id)`
+  (a public, unauthenticated query gated by the RLS policy above) feeding
+  the same random-pick helper, still a plain function outside the
+  component body for the same `react-hooks/purity` reason as ADR-034. An
+  empty pool falls back to the ADR-031/033 flat gradient — the same
+  graceful-empty-state behavior ADR-034 had for zero static files, now
+  for zero DB rows.
+- `public/hero/` (the four-slot directory and its README from ADR-034)
+  was deleted — nothing referenced it anymore.
+- Migration applied directly to the live Supabase project via the
+  Supabase MCP tools (a separate, authorized connection path from this
+  sandbox's own network egress, which cannot reach the project directly).
+  Before applying it, `list_tables` confirmed every earlier migration's
+  objects (all tables through `analytics_events`) already exist live
+  despite `list_migrations` only recording two of them — a
+  migration-history bookkeeping gap from how those earlier migrations
+  were first applied, not missing schema — so this migration was safe to
+  layer on top without risk of colliding with or skipping prior DDL.
+
+### Bug fix folded into the same pass
+
+While building `StoreHeroImagesManager`'s upload handler, applied the
+same fix the user's separate bug report needed:
+`ProductImagesManager.handleFilesSelected` had no `try/catch` around its
+`await uploadProductImages(...)` call. `requireStoreMembership()` inside
+that Server Action can *throw* (not just return `{ ok: false }`) if the
+session expired or the membership lookup itself fails, and an uncaught
+rejection left `isUploading` stuck `true` forever with no error shown —
+exactly the "no retorno, nao da erro, upload nao acontece" the user
+described. Fixed with `try/catch/finally`, and the new hero-images
+manager was written with the same guard from the start.
+
+### Not changed
+
+- The four-photo "one of each theme" idea from ADR-034 doesn't apply
+  here — the pool size is now whatever the admin uploads (the user
+  supplied 3 photos this round, more or fewer can be added later).
+- No reorder/"set as primary" UI, per above — can be added later if the
+  seller ever asks for control over which photo appears more often.
+
 ## ADR-031 — Storefront light-theme audit: contrast fixes, two build-breaking bugs, and UX corrections
 
 **Status:** Accepted

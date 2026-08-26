@@ -337,6 +337,32 @@ export interface Database {
           },
         ];
       };
+      store_hero_images: {
+        Row: {
+          id: string;
+          store_id: string;
+          url: string;
+          sort_order: number;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          store_id: string;
+          url: string;
+          sort_order?: number;
+          created_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["store_hero_images"]["Insert"]>;
+        Relationships: [
+          {
+            foreignKeyName: "store_hero_images_store_id_fkey";
+            columns: ["store_id"];
+            isOneToOne: false;
+            referencedRelation: "stores";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       ai_models: {
         Row: {
           id: string;
