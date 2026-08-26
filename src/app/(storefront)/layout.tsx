@@ -54,14 +54,18 @@ export async function generateMetadata(): Promise<Metadata> {
  * Shell for every public storefront route (PRD §17 "identidade da loja").
  * No auth, no admin chrome — see ARCHITECTURE.md §4.1.
  *
- * `storefront-theme` (globals.css) scopes the dark oxblood/gold visual
- * identity to this subtree only — the admin panel never sees it.
+ * `storefront-theme` (globals.css) scopes the light blue/orange sports
+ * visual identity to this subtree only — the admin panel never sees it.
  *
  * `SelectionProvider` wraps every storefront page so the local WhatsApp
  * selection basket (PRD §22, TASKS.md Phase 4) survives client-side
- * navigation between pages, not just within one page. `pb-28` reserves
- * room at the bottom for `SelectionBar`, which is `fixed` and only
- * renders once at least one product is selected.
+ * navigation between pages, not just within one page. `pb-40` (160px)
+ * reserves room at the bottom for whichever fixed element is showing:
+ * `SelectionBar` (only renders with an active selection) and/or a page's
+ * own floating "Fale conosco" WhatsApp CTA (`fixed ... bottom-24 h-12` —
+ * its top edge sits 144px above the viewport bottom). Was `pb-28` (112px)
+ * — confirmed with a real scrolled-to-bottom screenshot that the floating
+ * CTA overlapped the last product card; see DECISIONS.md ADR-031.
  */
 export default async function StorefrontLayout({ children }: { children: React.ReactNode }) {
   const store = await getStorefrontStore();
@@ -83,7 +87,7 @@ export default async function StorefrontLayout({ children }: { children: React.R
           </Link>
           <SearchBar />
         </header>
-        <main className="p-4 pb-28">{children}</main>
+        <main className="p-4 pb-40">{children}</main>
         <SelectionBar whatsappNumber={store.whatsapp_number} />
       </SelectionProvider>
     </div>

@@ -12,6 +12,13 @@ const buttonVariants = cva(
         ghost: "hover:bg-accent hover:text-accent-foreground",
         destructive: "bg-destructive text-white hover:opacity-90",
         secondary: "bg-secondary text-secondary-foreground hover:opacity-90",
+        // Referenced by product-size-selector.tsx, selection-bar.tsx and
+        // whatsapp-cta.tsx (`buttonVariants({ variant: "whatsapp" })`) but
+        // was missing from this file — `tsc --noEmit` was failing with
+        // "Type '\"whatsapp\"' is not assignable" in all three. `bg-whatsapp`
+        // / `text-whatsapp-foreground` already existed as tokens in
+        // globals.css; this variant just wires the class onto Button.
+        whatsapp: "bg-whatsapp text-whatsapp-foreground hover:opacity-90",
       },
       size: {
         default: "h-11 px-4 py-2",

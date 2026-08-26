@@ -519,8 +519,20 @@ skipped integration tests. See DECISIONS.md ADR-028 and V-001.
 - [ ] Alt text
 - [ ] Visible focus
 - [ ] Keyboard navigation
-- [ ] Contrast
-- [ ] Touch target sizes
+- [x] Contrast
+- [x] Touch target sizes
+
+> Storefront-only pass (ADR-031): verified `.storefront-theme`'s WCAG
+> contrast computationally (OKLCH → luminance → ratio) and fixed 4 real
+> AA failures (`--whatsapp`, `--accent`, `--destructive`, `--border`/
+> `--input`), and bumped every under-44px storefront touch target (size
+> chips, selection-bar remove button, team-page filter chips, selection
+> bar's toggle/Limpar/Finalizar row) to the 44px mobile minimum. Also
+> fixed two build-breaking bugs found along the way (missing `whatsapp`
+> button variant, missing `@fontsource` dependency) and 3 UX issues
+> (floating CTA overlapping content, team page missing a WhatsApp CTA,
+> the touch targets above). Admin panel and "Proper labels"/"Alt
+> text"/"Keyboard navigation" are unchanged — still open.
 
 ## Final tests
 

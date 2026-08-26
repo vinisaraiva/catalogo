@@ -4,6 +4,7 @@ import { getStorefrontStore } from "@/lib/store/get-storefront-store";
 import { getTeamBySlug } from "@/lib/queries/teams";
 import { listPublicProducts } from "@/lib/queries/public-products";
 import { ProductCard } from "@/components/storefront/product-card";
+import { WhatsappCta } from "@/components/storefront/whatsapp-cta";
 import { cn } from "@/lib/utils";
 
 const TEAM_TYPE_LABEL: Record<string, string> = {
@@ -96,7 +97,9 @@ export default async function TeamPage({
           <Link
             href={`/time/${slug}`}
             className={cn(
-              "shrink-0 rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors",
+              // min-h-11 (44px) — CLAUDE.md's "large touch targets on mobile"
+              // standard; the previous px-3 py-1.5 pill was only ~28px tall.
+              "inline-flex min-h-11 shrink-0 items-center rounded-full border px-4 text-xs font-semibold transition-colors",
               !f
                 ? "bg-primary text-primary-foreground border-primary"
                 : "border-input text-muted-foreground hover:bg-accent",
@@ -109,7 +112,7 @@ export default async function TeamPage({
               key={`${filter.kind}:${filter.value}`}
               href={`/time/${slug}?f=${filter.kind}:${encodeURIComponent(filter.value)}`}
               className={cn(
-                "shrink-0 rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors",
+                "inline-flex min-h-11 shrink-0 items-center rounded-full border px-4 text-xs font-semibold transition-colors",
                 activeKind === filter.kind && activeValue === filter.value
                   ? "bg-primary text-primary-foreground border-primary"
                   : "border-input text-muted-foreground hover:bg-accent",
@@ -130,6 +133,22 @@ export default async function TeamPage({
           ))}
         </div>
       )}
+
+      {store.whatsapp_number ? (
+        // Was missing before this pass — Home has this CTA (CLAUDE.md's
+        // public-storefront rules: "should provide WhatsApp CTA"), but a
+        // customer browsing one team's shirts had no persistent way to
+        // open WhatsApp short of opening a specific product. Same
+        // bottom-24/pulse treatment as Home for consistency.
+        <WhatsappCta
+          phoneNumber={store.whatsapp_number}
+          message={`Olá! Vi as camisas do ${team.name} no catálogo da ${store.name} e gostaria de saber mais.`}
+          className="animate-whatsapp-pulse fixed right-4 bottom-24 z-10 rounded-full shadow-lg"
+          size="lg"
+        >
+          Fale conosco
+        </WhatsappCta>
+      ) : null}
     </div>
   );
 }

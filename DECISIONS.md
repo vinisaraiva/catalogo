@@ -963,3 +963,84 @@ can just upload a square image as their logo; nothing stops that.
   unless later required.
 - "Verify add-to-home-screen behavior" (TASKS.md) stays unchecked — needs
   a real phone, not something this environment can confirm.
+
+## ADR-031 — Storefront light-theme audit: contrast fixes, two build-breaking bugs, and UX corrections
+
+**Status:** Accepted
+
+The user asked to run a `/design`-style critique on the storefront and improve
+the layout. Before that critique could be applied, this session discovered
+that the user had independently committed (directly on their own machine,
+outside this session — commits `9002e9f` and `429ea9e`) a full redesign that
+replaced this session's earlier dark oxblood/gold identity with a light-mode
+blue/orange "colorful sporty" palette. A device-sync step earlier in this
+session had accidentally overwritten 4 of those newer files with the old
+dark-theme content; this was caught via `git status`/`git diff` before
+anything was committed, disclosed to the user, and reverted with
+`git restore` back to `429ea9e`. **The user's light theme is the accepted
+baseline going forward** — this ADR documents fixes applied on top of it,
+not a return to the earlier dark redesign.
+
+With that baseline restored, a design critique and accessibility review ran
+against the actual current code. Two bugs were found that were already
+committed and are independent of the visual audit itself — both break a
+clean build/typecheck, not just styling:
+
+1. `src/components/ui/button.tsx`'s `cva` variant map never declared a
+   `"whatsapp"` key, even though `product-size-selector.tsx`,
+   `selection-bar.tsx` and `whatsapp-cta.tsx` all call
+   `buttonVariants({ variant: "whatsapp" })`. `tsc --noEmit` failed with 3
+   real `TS2322` errors. Fixed by adding
+   `whatsapp: "bg-whatsapp text-whatsapp-foreground hover:opacity-90"`.
+2. `(storefront)/layout.tsx` imports `@fontsource/bebas-neue` and
+   `@fontsource/plus-jakarta-sans` CSS files, but neither package was
+   declared in `package.json`. A clean `npm install` (Vercel, CI, a fresh
+   clone) would not have these fonts available — confirmed
+   `node_modules/@fontsource` did not exist after a fresh install. Fixed by
+   declaring both as dependencies.
+
+WCAG contrast was checked computationally (OKLCH → linear sRGB → relative
+luminance → contrast ratio, not eyeballed) against the real
+`.storefront-theme` tokens in `globals.css`, and found four real AA
+failures, each now documented inline with before/after ratios:
+
+- `--whatsapp-foreground` on `--whatsapp`: **2.24:1 → 5.11:1**. The most
+  severe of the four — this pairing is used on the site's single
+  most-repeated conversion action ("Fale conosco" / "Finalizar" / "Falar no
+  WhatsApp").
+- `--accent-foreground` on `--accent`: **2.81:1 → 5.15:1** (hero gradient,
+  button hover states).
+- `--destructive-foreground` on `--destructive`: **4.28:1 → 5.29:1** (the
+  "Esgotado" badge, small bold text — needs the 4.5:1 body-text floor, not
+  just 3:1).
+- `--border` / `--input` against `--background`: **~1.2:1 → ~3.7:1**,
+  clearing WCAG 1.4.11's 3:1 non-text floor for functional UI boundaries
+  (search input, size chips, card edges were effectively borderless).
+
+Three UX fixes were applied on top of the light theme:
+
+- The floating "Fale conosco" WhatsApp CTA overlapped the last product card
+  when scrolled to the bottom — `<main>` reserved `pb-28` (112px) but the
+  CTA's own footprint (`bottom-24` + `h-12`) reaches 144px. Fixed:
+  `pb-40` (160px), verified with a real scrolled-to-bottom screenshot.
+- The team page (`time/[slug]`) had no WhatsApp CTA at all, unlike Home —
+  added one (`WhatsappCta`, same `bottom-24`/pulse treatment as Home).
+- Several touch targets were under the 44px mobile minimum (CLAUDE.md
+  "large touch targets on mobile"): size-selector chips (~40px), the
+  selection-bar remove button (~16px hit area), team-page filter chips
+  (~28px), and the selection bar's toggle/Limpar/Finalizar row (~20px on
+  the toggle). All bumped to `min-h-11`/`min-w-11` (44px) or the default
+  44px button height.
+
+### Deliberately not fixed
+
+- `--success` / `--success-foreground` also fail contrast (3.58:1), but
+  `badge.tsx`'s `success` variant uses hardcoded `bg-emerald-600
+  text-white` instead of these tokens — they're currently dead CSS. Left
+  as-is; worth revisiting only if something starts consuming those tokens.
+
+### Not in scope for this pass
+
+No new dependency beyond the two re-added `@fontsource` packages, no
+migration, no admin/backend change — storefront markup and
+`.storefront-theme` CSS only.

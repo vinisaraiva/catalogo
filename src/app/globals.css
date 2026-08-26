@@ -95,18 +95,13 @@
  * `@theme inline` already points every `bg-*`/`text-*` utility at), just
  * scoped to one route group instead of toggled on `<html>`.
  *
- * "Sporty, modern" for a jersey shop, tied to what the catalog actually
- * sells rather than a generic sports cliché (grass green, or the
- * black+neon-green "fitness app" look): a deep oxblood/vintage-program
- * palette with a brass/gold accent — closer to a stadium program cover or
- * a retro scoreboard than a SaaS dashboard. Dark base so product photos
- * (jerseys, often shot on white/light backgrounds) read as the hero, spotlit
- * against the frame, the way sneaker/streetwear drop apps do. Every pairing
- * below was checked against WCAG AA with `oklch`→sRGB contrast math before
- * being committed — see DECISIONS.md's redesign ADR for the numbers.
+ * Light, colorful sports identity: a bright blue `--primary` (CTAs, prices,
+ * active states) paired with a warm orange `--accent` for highlights and
+ * badges, on a near-white base so product photos stay the hero. See
+ * DECISIONS.md ADR-031 for how this palette's contrast pairs were verified.
  *
  * WhatsApp keeps its own recognizable green (`--whatsapp`), deliberately
- * separate from `--primary` (gold): every WhatsApp button should read as
+ * separate from `--primary` (blue): every WhatsApp button should read as
  * "this opens WhatsApp" at a glance, not blend in with the site's own
  * accent used for prices/active states/badges.
  */
@@ -123,19 +118,32 @@
   --secondary-foreground: oklch(0.25 0.02 260);
   --muted: oklch(0.96 0.005 250);
   --muted-foreground: oklch(0.5 0.01 260);
-  --accent: oklch(0.7 0.18 30);
+  /* was oklch(0.7 0.18 30) — white text on it (hero gradient, button
+     hover) was only 2.81:1, failing WCAG AA even for large text (needs
+     3:1); darkened to clear 5.15:1 while keeping the same warm-orange hue. */
+  --accent: oklch(0.55 0.18 30);
   --accent-foreground: oklch(0.99 0 0);
-  --destructive: oklch(0.6 0.22 25);
+  /* was oklch(0.6 0.22 25) — white text (the "Esgotado" badge) was 4.28:1,
+     short of the 4.5:1 body-text AA floor at that small bold size; darkened
+     to 5.29:1. */
+  --destructive: oklch(0.55 0.22 25);
   --destructive-foreground: oklch(0.99 0 0);
-  --border: oklch(0.92 0.005 250);
-  --input: oklch(0.92 0.005 250);
+  /* was oklch(0.92 0.005 250) — 1.18:1 against the near-white background,
+     effectively invisible as a boundary (search input, size chips, card
+     edges). Darkened to ~3.7:1, clearing WCAG 1.4.11's 3:1 non-text
+     contrast for functional UI element boundaries. */
+  --border: oklch(0.6 0.01 250);
+  --input: oklch(0.6 0.01 250);
   --ring: oklch(0.55 0.2 260);
   --success: oklch(0.6 0.17 145);
   --success-foreground: oklch(0.99 0 0);
 
   --brand: oklch(0.55 0.2 260);
   --brand-foreground: oklch(0.99 0 0);
-  --whatsapp: oklch(0.72 0.19 150);
+  /* was oklch(0.72 0.19 150) — white text ("Fale conosco", "Finalizar",
+     "Falar no WhatsApp") was only 2.24:1, badly failing AA on the site's
+     single most-repeated conversion action. Darkened to 5.11:1. */
+  --whatsapp: oklch(0.5 0.19 150);
   --whatsapp-foreground: oklch(0.99 0 0);
 
   font-family: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;

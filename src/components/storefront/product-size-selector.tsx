@@ -72,7 +72,10 @@ export function ProductSizeSelector({
                     setSelectedSize((current) => (current === size.size ? null : size.size))
                   }
                   className={cn(
-                    "rounded-full border-2 px-4 py-2 text-sm font-semibold transition-all duration-200",
+                    // min-h/min-w-11 (44px) — CLAUDE.md's "large touch
+                    // targets on mobile" standard; the border-2 px-4 py-2
+                    // pill was ~40px tall, 4px under the mobile minimum.
+                    "inline-flex min-h-11 min-w-11 items-center justify-center rounded-full border-2 px-4 text-sm font-semibold transition-all duration-200",
                     !available &&
                       "border-border text-muted-foreground cursor-not-allowed line-through opacity-50",
                     available && selected && "border-primary bg-primary text-primary-foreground shadow-md shadow-primary/20",
